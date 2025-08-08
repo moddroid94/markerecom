@@ -2,6 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 export function NeonShift3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -21,21 +26,41 @@ export function NeonShift3D() {
 
     // Camera
     const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
-    camera.position.z = 25;
+    camera.position.z = 35 + window.outerWidth / 50;
 
     // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, premultipliedAlpha: true });
+    //renderer.setAnimationLoop( animate );
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     currentMount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    const composer = new EffectComposer( renderer );
+    
+    const renderPass = new RenderPass( scene, camera );
+    const outputPass = new OutputPass();
+    
+    const glitchPass = new GlitchPass();
+    
+    
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 0.2, 1.0, 0.95 );
+    composer.addPass( renderPass );
+    composer.addPass(bloomPass);
+    composer.addPass( glitchPass );
+    composer.addPass( outputPass );
+    
+    
+
     // Object
     const geometry = new THREE.TorusKnotGeometry(8, 2, 128, 16);
-    const primaryMaterial = new THREE.MeshStandardMaterial({
-      color: 0x6A3CBC,
+    const geometry2 = new THREE.TorusKnotGeometry(8, 2, 128, 16);
+    const primaryMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xFFFFAA,
       metalness: 0.8,
       roughness: 0.2,
+      emissive: 0x6A3CBC,
+      emissiveIntensity: 0,
       wireframe: false,
     });
     const accentMaterial = new THREE.MeshStandardMaterial({
@@ -47,10 +72,13 @@ export function NeonShift3D() {
       wireframe: false,
     });
     const mesh = new THREE.Mesh(geometry, primaryMaterial);
+    const mesh2 = new THREE.Mesh(geometry2, primaryMaterial);
     scene.add(mesh);
+    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
+    scene.add(mesh2);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
     const pointLight1 = new THREE.PointLight(0x6A3CBC, 3.0, 100);
@@ -61,21 +89,63 @@ export function NeonShift3D() {
     pointLight2.position.set(-20, -20, -20);
     scene.add(pointLight2);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(0, 30, 0);
     scene.add(directionalLight);
+
+    let diff = 0;
+    let diffx = 0;
+    let mousepos =  new THREE.Vector2(0,0);
+    let timeoutid;
+    const fadepost = () => {
+      glitchPass.enabled = false;
+      console.log("test")
+    }
+
+    const removeglitch = setTimeout(fadepost, 500)
+    removeglitch
+
+    const snapScroll = (pp = 0) => {
+      if (mesh.position.y > 0 && mesh.position.y < (window.outerHeight / 20)) {
+        mesh.position.y -= 0.25;
+        mesh2.position.y -= 0.25;
+        timeoutid = setTimeout(snapScroll, 10);
+      } 
+      else if (mesh.position.y > (window.outerHeight / 20) && mesh2.position.y < -1) {
+        mesh.position.y += 0.25;
+        mesh2.position.y += 0.25;
+        timeoutid = setTimeout(snapScroll, 10);
+      }
+      else if (mesh2.position.y > 1 && mesh2.position.y < (window.outerHeight / 20)) {
+        mesh.position.y -= 0.25;
+        mesh2.position.y -= 0.25;
+        timeoutid = setTimeout(snapScroll, 10);
+      }
+      else {
+        clearTimeout(timeoutid);
+      }
+    }
+
+    const mouseover = () => {
+      primaryMaterial.roughness = 0.2;
+      (mesh.material as THREE.Material).needsUpdate = true;
+      clearTimeout(timeoutid);
+    }
 
     // Animation loop
     let frameId: number;
     const animate = () => {
       frameId = requestAnimationFrame(animate);
       if (!isDraggingRef.current) {
-        mesh.rotation.y += 0.001;
+        //mesh.rotation.y += 0.003;
       }
-      renderer.render(scene, camera);
+       
+      //mesh2.position.y = mesh.position.y - 60;
+      //renderer.render(scene, camera);
+      composer.render();
     };
     animate();
-
+    
     // Event Handlers
     const handleResize = () => {
       if (!currentMount) return;
@@ -84,12 +154,89 @@ export function NeonShift3D() {
       renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     };
 
-    const handleScroll = () => {
-        const scrollY = window.scrollY;
-        const rotation = scrollY * 0.001;
-        mesh.rotation.z = rotation;
-        mesh.rotation.x = rotation;
+    const handletouch = (event: TouchEvent) => {
+      diff = event.touches[0].screenY;
+      diffx = event.touches[0].screenX;
+
+    }
+
+    const handledragtouch = (event: TouchEvent) => {
+      mousepos.x = (event.touches[0].clientX / currentMount.clientWidth) * 2 -1;
+      mousepos.y = (event.touches[0].clientY / currentMount.clientHeight) * -2 + 1;
+
+      const delta = diff - event.touches[0].screenY;
+      const deltax = diffx - event.touches[0].screenX;
+      const myAxis = new THREE.Vector3(0, -1, 0);
+
+      if (delta < 0 ) {
+        event.preventDefault();
+      }
+
+      if (mesh.position.y < -1) {
+        if (delta > 0) {
+          mesh.translateY((delta / window.outerHeight) * 60.5);
+          mesh2.translateY((delta / window.outerHeight) * 60.5);
+        }
+      } else {
+        mesh.translateY((delta / window.outerHeight) * 60.5);
+        mesh2.translateY((delta / window.outerHeight) * 60.5);
+      }
+      mesh.rotateOnWorldAxis(myAxis, ( (deltax / window.outerWidth) * 5 ))
+      mesh2.rotateOnWorldAxis(myAxis, ( (deltax / window.outerWidth) * 5 ))
+
+      diff = event.touches[0].screenY;
+      diffx = event.touches[0].screenX;
+
+      if (mesh.position.y > 5 ){
+        clearTimeout(timeoutid)
+        timeoutid = setTimeout(snapScroll, 400);
+      }
+      if (mesh2.position.y > -(window.outerHeight / 20) ){
+        clearTimeout(timeoutid)
+        timeoutid = setTimeout(snapScroll, 400, 1150); 
+      }
+
+      const raycaster = new THREE.Raycaster();
+
+      raycaster.setFromCamera(mousepos, camera);
+      
+      const intersects = raycaster.intersectObjects([mesh]);
+      const intersects2 = raycaster.intersectObjects([mesh2]);
+      if (intersects.length > 0) {
+        primaryMaterial.emissiveIntensity = 0.1;
+        //(mesh.material as THREE.Material).needsUpdate = true;
+      }
+      else if (intersects2.length > 0) {
+        primaryMaterial.emissiveIntensity = 0.1;
+        //(mesh.material as THREE.Material).needsUpdate = true;
+      } else {
+        primaryMaterial.emissiveIntensity = 0.0;
+        //(mesh.material as THREE.Material).needsUpdate = true;
+      }
+    }
+
+    const handleScroll = (event: WheelEvent) => {
+        const scrollY = event.deltaY * 4;
+        const rotation = scrollY / window.innerHeight
+        const myAxis = new THREE.Vector3(0, 1, 0);
+        diff = window.scrollY
+        if (mesh.position.y < -1) {
+          if (scrollY > 0) {
+            mesh.translateY(scrollY / 150);
+            mesh2.translateY(scrollY / 150);
+            mesh.rotateOnWorldAxis(myAxis, ( scrollY /3600))
+            mesh2.rotateOnWorldAxis(myAxis, ( scrollY /3600))
+          }
+        } else {
+          mesh.translateY(scrollY / 150);
+          mesh2.translateY(scrollY / 150);
+          mesh.rotateOnWorldAxis(myAxis, ( scrollY /3600))
+          mesh2.rotateOnWorldAxis(myAxis, ( scrollY /3600))
+        }
+        
+        
     };
+
 
     const handleMouseDown = (event: MouseEvent) => {
       isDraggingRef.current = true;
@@ -100,15 +247,23 @@ export function NeonShift3D() {
     const handleMouseMove = (event: MouseEvent) => {
       if (!isDraggingRef.current) return;
       wasDraggedRef.current = true;
+      const myAxis = new THREE.Vector3(0, 1, 0);
       const deltaX = event.clientX - previousMousePositionRef.current.x;
       const deltaY = event.clientY - previousMousePositionRef.current.y;
-      mesh.rotation.y += deltaX * 0.005;
-      mesh.rotation.x += deltaY * 0.005;
+      mesh.rotateOnWorldAxis(myAxis, ( deltaX * 0.005))
+      mesh2.rotateOnWorldAxis(myAxis, ( deltaX * 0.005))
+      //mesh.position.y += deltaY * 0.05;
+      //mesh2.position.y += deltaY * 0.05;
+      //window.scrollBy(0, -deltaY * 2)
+      //mesh.rotation.y += deltaX * 0.005;
+      //mesh.rotation.x += deltaY * 0.005;
       previousMousePositionRef.current = { x: event.clientX, y: event.clientY };
     };
 
     const handleMouseUp = () => {
       isDraggingRef.current = false;
+      primaryMaterial.roughness = 0.2;
+      (mesh.material as THREE.Material).needsUpdate = true;
     };
     
     let isAlternateMaterial = false;
@@ -119,29 +274,39 @@ export function NeonShift3D() {
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / currentMount.clientWidth) * 2 - 1;
       mouse.y = -(event.clientY / currentMount.clientHeight) * 2 + 1;
+
       raycaster.setFromCamera(mouse, camera);
       
       const intersects = raycaster.intersectObjects([mesh]);
-
+      const intersects2 = raycaster.intersectObjects([mesh2]);
       if (intersects.length > 0) {
         isAlternateMaterial = !isAlternateMaterial;
         mesh.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
         (mesh.material as THREE.Material).needsUpdate = true;
       }
+      if (intersects2.length > 0) {
+        isAlternateMaterial = !isAlternateMaterial;
+        mesh2.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
+        (mesh2.material as THREE.Material).needsUpdate = true;
+      }
     };
     
     // Add event listeners
     window.addEventListener('resize', handleResize);
-    document.addEventListener('scroll', handleScroll);
+    document.addEventListener('touchmove', handledragtouch, { passive: false });
+    document.addEventListener('touchstart', handletouch);
+    document.addEventListener('wheel', handleScroll);
     currentMount.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleMouseUp);
     currentMount.addEventListener('click', handleClick);
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      document.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('wheel', handleScroll);
+      document.removeEventListener('touchmove', handleScroll);
       currentMount.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
