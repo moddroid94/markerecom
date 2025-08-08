@@ -7,6 +7,70 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+let VerticalBlurShader = {
+
+  uniforms: {
+
+    "tDiffuse": {
+      value: null
+    },
+    "v": {
+      value: 1.0 / 256.0
+    },
+    "mouse": {
+      value: new THREE.Vector2()
+    },
+    "ratio": {
+      value: window.innerWidth / window.innerHeight
+    }
+
+  },
+
+  vertexShader: `
+  varying vec2 vUv;
+  
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+  }`,
+
+  fragmentShader: `
+
+  uniform sampler2D tDiffuse;
+  uniform float v;
+  uniform vec2 mouse;
+  uniform float ratio;
+  varying vec2 vUv;
+
+  
+  void main() {
+    vec2 uv = vUv;
+    uv = -1. + 2. * uv;
+    uv -= mouse;
+    uv.x *= ratio;
+    if ( length(uv) > 0.1 ) {
+      gl_FragColor = texture2D(tDiffuse, vUv);
+    } 
+    else{
+      vec4 sum = vec4( 0.0 );
+      
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 9.0 * v ) ) * 0.0051;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 3.0 * v ) ) * 0.0918;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 2.0 * v ) ) * 0.12245;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 1.0 * v ) ) * 0.1531;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 1.0 * v ) ) * 0.1531;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 2.0 * v ) ) * 0.12245;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 3.0 * v ) ) * 0.0918;
+      sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 4.0 * v ) ) * 0.0051;
+
+      gl_FragColor = sum;
+    }
+
+  }`
+};
 
 export function NeonShift3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -43,12 +107,14 @@ export function NeonShift3D() {
     
     const glitchPass = new GlitchPass();
     
+    var hblur = new ShaderPass(VerticalBlurShader);
     
     const bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 0.2, 1.0, 0.95 );
     composer.addPass( renderPass );
     composer.addPass(bloomPass);
     composer.addPass( glitchPass );
     composer.addPass( outputPass );
+    composer.addPass(hblur);
     
     
 
@@ -56,10 +122,10 @@ export function NeonShift3D() {
     const geometry = new THREE.TorusKnotGeometry(8, 2, 128, 16);
     const geometry2 = new THREE.TorusKnotGeometry(8, 2, 128, 16);
     const primaryMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xFFFFAA,
-      metalness: 0.8,
-      roughness: 0.2,
-      emissive: 0x6A3CBC,
+      color: 0xFFFFFF,
+      metalness: 0.9,
+      roughness: 0.4,
+      emissive: 0xFFFFFF,
       emissiveIntensity: 0,
       wireframe: false,
     });
@@ -142,6 +208,7 @@ export function NeonShift3D() {
        
       //mesh2.position.y = mesh.position.y - 60;
       //renderer.render(scene, camera);
+      hblur.uniforms.mouse.value.copy(mousepos);
       composer.render();
     };
     animate();
@@ -245,18 +312,19 @@ export function NeonShift3D() {
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isDraggingRef.current) return;
+      if (!isDraggingRef.current) {
+        mousepos.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mousepos.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        return
+      };
       wasDraggedRef.current = true;
       const myAxis = new THREE.Vector3(0, 1, 0);
       const deltaX = event.clientX - previousMousePositionRef.current.x;
       const deltaY = event.clientY - previousMousePositionRef.current.y;
       mesh.rotateOnWorldAxis(myAxis, ( deltaX * 0.005))
       mesh2.rotateOnWorldAxis(myAxis, ( deltaX * 0.005))
-      //mesh.position.y += deltaY * 0.05;
-      //mesh2.position.y += deltaY * 0.05;
-      //window.scrollBy(0, -deltaY * 2)
-      //mesh.rotation.y += deltaX * 0.005;
-      //mesh.rotation.x += deltaY * 0.005;
+      mousepos.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mousepos.y = -(event.clientY / window.innerHeight) * 2 + 1;
       previousMousePositionRef.current = { x: event.clientX, y: event.clientY };
     };
 
@@ -325,3 +393,4 @@ export function NeonShift3D() {
 
   return <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
 }
+
