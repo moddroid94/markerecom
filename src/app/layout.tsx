@@ -1,10 +1,6 @@
-import type {Metadata} from 'next';
+"use client";
 import './globals.css';
-
-export const metadata: Metadata = {
-  title: 'NeonShift 3D',
-  description: 'Interactive 3D Scene by Firebase Studio',
-};
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
@@ -18,7 +14,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">{children}</body>
+      <body className="font-body antialiased">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

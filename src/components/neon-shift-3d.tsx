@@ -23,7 +23,7 @@ let VerticalBlurShader = {
       value: new THREE.Vector2()
     },
     "ratio": {
-      value: window.innerWidth / window.innerHeight
+      value: 1
     }
 
   },
@@ -241,12 +241,12 @@ export function NeonShift3D() {
 
       if (mesh.position.y < -1) {
         if (delta > 0) {
-          mesh.translateY((delta / window.outerHeight) * 60.5);
-          mesh2.translateY((delta / window.outerHeight) * 60.5);
+          mesh.translateY((delta / window.outerHeight) * 100.5);
+          mesh2.translateY((delta / window.outerHeight) * 100.5);
         }
       } else {
-        mesh.translateY((delta / window.outerHeight) * 60.5);
-        mesh2.translateY((delta / window.outerHeight) * 60.5);
+        mesh.translateY((delta / window.outerHeight) * 100.5);
+        mesh2.translateY((delta / window.outerHeight) * 100.5);
       }
       mesh.rotateOnWorldAxis(myAxis, ( (deltax / window.outerWidth) * 5 ))
       mesh2.rotateOnWorldAxis(myAxis, ( (deltax / window.outerWidth) * 5 ))
