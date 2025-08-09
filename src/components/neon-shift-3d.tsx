@@ -90,7 +90,7 @@ export function NeonShift3D() {
 
     // Camera
     const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
-    camera.position.z = 35 + window.outerWidth / 50;
+    
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, premultipliedAlpha: true });
@@ -140,8 +140,12 @@ export function NeonShift3D() {
     const mesh = new THREE.Mesh(geometry, primaryMaterial);
     const mesh2 = new THREE.Mesh(geometry2, primaryMaterial);
     scene.add(mesh);
-    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
+    
     scene.add(mesh2);
+
+    // This code now runs only on the client, avoiding hydration errors
+    camera.position.z = 35 + window.outerWidth / 50;
+    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -393,4 +397,3 @@ export function NeonShift3D() {
 
   return <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />;
 }
-
