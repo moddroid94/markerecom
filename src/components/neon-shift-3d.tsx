@@ -8,6 +8,9 @@ import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 let VerticalBlurShader = {
 
@@ -79,7 +82,9 @@ export function NeonShift3D() {
   const isDraggingRef = useRef(false);
   const wasDraggedRef = useRef(false);
   const previousMousePositionRef = useRef({ x: 0, y: 0 });
+  const loader = new GLTFLoader();
 
+  
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -87,16 +92,19 @@ export function NeonShift3D() {
 
     // Scene
     const scene = new THREE.Scene();
+    let gltfscene;
 
+    
     // Camera
     const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
     
 
     // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, premultipliedAlpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
     //renderer.setAnimationLoop( animate );
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     currentMount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -109,7 +117,7 @@ export function NeonShift3D() {
     
     var hblur = new ShaderPass(VerticalBlurShader);
     
-    const bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 0.2, 1.0, 0.95 );
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 1.2, 1.0, 0.95 );
     composer.addPass( renderPass );
     composer.addPass(bloomPass);
     composer.addPass( glitchPass );
@@ -117,14 +125,16 @@ export function NeonShift3D() {
     //composer.addPass(hblur);
     
     
-
+    
+    
     // Object
-    const geometry = new THREE.TorusKnotGeometry(8, 2, 128, 16);
-    const geometry2 = new THREE.TorusKnotGeometry(8, 2, 128, 16);
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
+
     const primaryMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xFFFFFF,
       metalness: 0.9,
-      roughness: 0.4,
+      roughness: 0.6,
       emissive: 0xFFFFFF,
       emissiveIntensity: 0,
       wireframe: false,
@@ -137,16 +147,121 @@ export function NeonShift3D() {
       roughness: 0.6,
       wireframe: true,
     });
-    const mesh = new THREE.Mesh(geometry, primaryMaterial);
-    const mesh2 = new THREE.Mesh(geometry2, primaryMaterial);
-    scene.add(mesh);
+    const backMaterial = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      metalness: 0.2,
+      roughness: 0.6,
+      wireframe: false,
+      transparent: true,
+      opacity: 0,
+    });
+
+    let mesh = new THREE.Mesh(geometry, primaryMaterial);
+    let meshtext = new THREE.Mesh(new TextGeometry('three.js'), primaryMaterial);
+    let mesh2 = new THREE.Mesh(geometry, primaryMaterial);
+    //fix mesh under viewport
+    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
+    let mesh2text = new THREE.Mesh(new TextGeometry('three.js'), primaryMaterial);
+    let mesh3 = new THREE.Mesh(backgeometry, backMaterial);
+    mesh3.position.z = -15
+
+    scene.add(mesh3)
+    const floader = new FontLoader();
     
-    scene.add(mesh2);
+
+    loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
+      const root = gltf.scene
+      let locscene = root.getObjectByName('Pen');
+      mesh = locscene.children[0]
+      mesh.rotateY(1.4);
+      mesh.rotateX(-0.5);
+      mesh.geometry.scale(3,3,3)
+      //mesh.rotation.y = 1.3;
+      //mesh.rotation.x = 0.5;
+      mesh.material.transparent = true;
+      scene.add(mesh);
+      //scene.add(root);
+    }, undefined, function ( error ) {
+  
+      console.error( error );
+  
+    } );
+
+    floader.load('Bahianita_Regular.json', (font) => {
+      const text = 'BLOODY';  
+        const geometry = new TextGeometry(text, {
+          font: font,
+          size: 5,  
+      
+          depth: 0.2,  
+      
+          curveSegments: 12,  
+      
+          bevelEnabled: true,  
+          bevelThickness: 0.15,  
+      
+          bevelSize: 0.3,  
+      
+          bevelSegments: 5,  
+      
+        });
+        meshtext = new THREE.Mesh(geometry, primaryMaterial)
+        meshtext.position.x = -5.7
+        meshtext.position.z = 15;
+        scene.add(meshtext);
+        
+    });
+
+
+    loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
+      const root = gltf.scene
+      let locscene = root.getObjectByName('Pen');
+      mesh2 = locscene.children[0]
+      mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 1.3);
+      mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), 1);
+      mesh2.geometry.scale(3,3,3)
+      mesh2.position.y = mesh.position.y - (window.outerHeight / 15);
+      //mesh.rotation.y = 1.3;
+      //mesh.rotation.x = 0.5;
+      scene.add(mesh2);
+      //scene.add(root);
+    }, undefined, function ( error ) {
+  
+      console.error( error );
+  
+    } );
+    
+    floader.load('Bahianita_Regular.json', (font) => {
+      const text = 'BLOODY INK';  
+        const geometry = new TextGeometry(text, {
+          font: font,
+          size: 5,  
+      
+          depth: 0.2,  
+      
+          curveSegments: 12,  
+      
+          bevelEnabled: true,  
+          bevelThickness: 0.15,  
+      
+          bevelSize: 0.3,  
+      
+          bevelSegments: 5,  
+      
+        });
+        mesh2text = new THREE.Mesh(geometry, primaryMaterial)
+        mesh2text.position.x = -9
+        mesh2text.position.z = 15;
+        scene.add(mesh2text);
+        
+    });
+
+    scene.background = new THREE.Color(0xc2c2c2);
 
     // This code now runs only on the client, avoiding hydration errors
     camera.position.z = 35 + window.outerWidth / 100;
-    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
-
+    
+ 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -158,7 +273,11 @@ export function NeonShift3D() {
     const pointLight2 = new THREE.PointLight(0x39FF14, 3.0, 100);
     pointLight2.position.set(-20, -20, -20);
     scene.add(pointLight2);
-    
+
+    const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.3);
+    directionalLight3.position.set(30, 0, 20);
+    scene.add(directionalLight3);
+
     const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight2.position.set(0, 30, 0);
     scene.add(directionalLight2);
@@ -178,6 +297,20 @@ export function NeonShift3D() {
     let enterstop: NodeJS.Timeout;
     let enteranim: NodeJS.Timeout;
 
+    // Animation loop
+    let frameId: number;
+    const animate = () => {
+      frameId = requestAnimationFrame(animate);
+      if (!isDraggingRef.current) {
+        mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
+        mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
+      }
+      meshtext.position.y = mesh.position.y - 10;
+      mesh2text.position.y = mesh2.position.y - 10;
+
+      hblur.uniforms.mouse.value.copy(mousepos);
+      composer.render();
+    };
 
     const fadepost = () => {
       glitchPass.enabled = false;
@@ -185,11 +318,19 @@ export function NeonShift3D() {
     }
 
     const camerazoom = () => {
-      camera.position.z -= 1;
+      if (camera.position.z > -5 ) {
+        camera.position.z -= 1;
+      }
+      if (mesh.material.opacity > 0.03) {
+        mesh.material.opacity -= 0.04;
+      }
+      if (mesh3.material.opacity < 0.99) {
+      mesh3.material.opacity += 0.02;
+      }
     }
-
+    
     const stopcamerazoom = () => {
-      clearInterval(enteranim);
+      clearInterval(enteranim);      
       window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
     }
 
@@ -204,10 +345,10 @@ export function NeonShift3D() {
       const intersects = raycaster.intersectObjects([mesh, mesh2]);
       // const intersects2 = raycaster.intersectObjects([mesh2]);
       if (intersects.length > 0) {
-        isAlternateMaterial = !isAlternateMaterial;
+        //isAlternateMaterial = !isAlternateMaterial;
         //gives error but its actually working as intended for simple scenes
-        intersects[0].object.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
-        intersects[0].object.material.needsUpdate = true;
+        //intersects[0].object.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
+        //intersects[0].object.material.needsUpdate = true;
         
       }
     }
@@ -218,12 +359,12 @@ export function NeonShift3D() {
         mesh2.position.y += 0.25;
         timeoutid = setTimeout(snapScroll, 10);
       }
-      else if (mesh.position.y > 0 && mesh.position.y < (window.outerHeight / 20)) {
+      else if (mesh.position.y > 0 && mesh.position.y < (window.outerHeight / 25)) {
         mesh.position.y -= 0.25;
         mesh2.position.y -= 0.25;
         timeoutid = setTimeout(snapScroll, 10);
       } 
-      else if (mesh.position.y > (window.outerHeight / 20) && mesh2.position.y < -1) {
+      else if (mesh.position.y > (window.outerHeight / 25) && mesh2.position.y < -1) {
         mesh.position.y += 0.25;
         mesh2.position.y += 0.25;
         timeoutid = setTimeout(snapScroll, 10);
@@ -240,14 +381,8 @@ export function NeonShift3D() {
 
     const snapBack = () => {
         //handle the snap back in place timeout on scrolling
-      if (mesh.position.y > 5 || mesh.position.y < 0){
         clearTimeout(timeoutid)
-        timeoutid = setTimeout(snapScroll, 300);
-      }
-      if (mesh2.position.y > -(window.outerHeight / 20) ){
-        clearTimeout(timeoutid)
-        timeoutid = setTimeout(snapScroll, 300); 
-      }
+        timeoutid = setTimeout(snapScroll, 650);
     }
 
     const mouseover = () => {
@@ -260,30 +395,18 @@ export function NeonShift3D() {
       //handle mesh movement/rotation on touch drag
       if (mesh.position.y < -1) {
         if (delta > 0) {
-          mesh.translateY(translation);
-          mesh2.translateY(translation);
+          mesh.position.y += translation;
+          mesh2.position.y += translation;
+          
         }
-      } else {
-        mesh.translateY(translation);
-        mesh2.translateY(translation);
+      } else if (mesh2.position.y < 2) {
+        //mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( translation / 10))
+        //mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( translation / 10))
+        mesh.position.y += translation;
+        mesh2.position.y += translation;
       }
     }
 
-    // Animation loop
-    let frameId: number;
-    const animate = () => {
-      frameId = requestAnimationFrame(animate);
-      if (!isDraggingRef.current) {
-        //mesh.rotation.y += 0.003;
-      }
-       
-      //mesh2.position.y = mesh.position.y - 60;
-      //renderer.render(scene, camera);
-      hblur.uniforms.mouse.value.copy(mousepos);
-      composer.render();
-    };
-    
-    
     // Event Handlers
     const handleResize = () => {
       if (!currentMount) return;
@@ -295,6 +418,9 @@ export function NeonShift3D() {
     const handletouch = (event: TouchEvent) => {
       diff = event.touches[0].screenY;
       diffx = event.touches[0].screenX;
+      clearTimeout(timeoutid)
+      clearInterval(scrollint)
+      clearTimeout(scrolliter)
     }
 
     const handledragtouch = (event: TouchEvent) => {
@@ -313,7 +439,7 @@ export function NeonShift3D() {
         event.preventDefault();
       }
 
-      handleTranslate(deltay, translation)
+      handleTranslate(deltay, translation / 4)
 
       mesh.rotateOnWorldAxis(myAxis, ( rotation ))
       mesh2.rotateOnWorldAxis(myAxis, ( rotation ))
@@ -327,11 +453,11 @@ export function NeonShift3D() {
     }
 
     const scrollstep = (delta:number) => {
-      let et = clock.getElapsedTime() + 1;
+      let et = clock.getElapsedTime() + 1 * 1.2;
       
-      if (mesh.position.y > -1) {
-        mesh.translateY(delta / et);
-        mesh2.translateY(delta / et);
+      if (mesh.position.y > -1 && mesh2.position.y < 5) {
+        mesh.position.y += (delta / et);
+        mesh2.position.y += (delta / et);
       } else {
         clearInterval(scrollint)
         clearTimeout(scrolliter)
@@ -351,7 +477,7 @@ export function NeonShift3D() {
       if (mesh.position.y > -1) {
         clock.start()
         scrollint = setInterval(scrollstep, 10, delta/5)
-        scrolliter = setTimeout(stopkinetic, 700)
+        scrolliter = setTimeout(stopkinetic, 650)
       }
     }
 
@@ -369,6 +495,9 @@ export function NeonShift3D() {
     const handleMouseDown = (event: MouseEvent) => {
       isDraggingRef.current = true;
       wasDraggedRef.current = false;
+      clearTimeout(timeoutid)
+      clearInterval(scrollint)
+      clearTimeout(scrolliter)
       previousMousePositionRef.current = { x: event.clientX, y: event.clientY };
     };
 
@@ -394,10 +523,8 @@ export function NeonShift3D() {
       mousepos.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
       handleTranslate(-deltaY, -translation)
-
-      scrollkinetic(-deltaY / 3)
-
       
+      scrollkinetic(-deltaY / 3)
 
       checkIntersect()
 
@@ -407,6 +534,8 @@ export function NeonShift3D() {
     const handleMouseUp = () => {
       isDraggingRef.current = false;
       snapBack()
+      
+      
     };
     
     let isAlternateMaterial = false;
@@ -423,6 +552,7 @@ export function NeonShift3D() {
       const intersects = raycaster.intersectObjects([mesh, mesh2]);
       //const intersects2 = raycaster.intersectObjects([mesh2]);
       if (intersects.length > 0) {
+        glitchPass.enabled = true;
         enteranim = setInterval(camerazoom, 10);
         enterstop = setTimeout(stopcamerazoom, 700);
       }
@@ -458,6 +588,8 @@ export function NeonShift3D() {
       primaryMaterial.dispose();
       accentMaterial.dispose();
       renderer.dispose();
+      composer.dispose();
+      
     };
   }, []);
 
