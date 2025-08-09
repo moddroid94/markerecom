@@ -132,10 +132,10 @@ export function NeonShift3D() {
     const accentMaterial = new THREE.MeshStandardMaterial({
       color: 0x39FF14,
       emissive: 0x39FF14,
-      emissiveIntensity: 0.4,
-      metalness: 0.8,
-      roughness: 0.2,
-      wireframe: false,
+      emissiveIntensity: 0.1,
+      metalness: 0.2,
+      roughness: 0.6,
+      wireframe: true,
     });
     const mesh = new THREE.Mesh(geometry, primaryMaterial);
     const mesh2 = new THREE.Mesh(geometry2, primaryMaterial);
@@ -144,11 +144,11 @@ export function NeonShift3D() {
     scene.add(mesh2);
 
     // This code now runs only on the client, avoiding hydration errors
-    camera.position.z = 35 + window.outerWidth / 50;
+    camera.position.z = 35 + window.outerWidth / 100;
     mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
     const pointLight1 = new THREE.PointLight(0x6A3CBC, 3.0, 100);
@@ -159,8 +159,12 @@ export function NeonShift3D() {
     pointLight2.position.set(-20, -20, -20);
     scene.add(pointLight2);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(0, 30, 0);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight2.position.set(0, 30, 0);
+    scene.add(directionalLight2);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    directionalLight.position.set(0, -30, 0);
     scene.add(directionalLight);
 
     let diff = 0;
@@ -171,14 +175,28 @@ export function NeonShift3D() {
     let scrollint: NodeJS.Timeout;
     let clock = new THREE.Clock(false);
 
+    let enterstop: NodeJS.Timeout;
+    let enteranim: NodeJS.Timeout;
+
+
     const fadepost = () => {
       glitchPass.enabled = false;
-      console.log("test")
+      
+    }
+
+    const camerazoom = () => {
+      camera.position.z -= 1;
+    }
+
+    const stopcamerazoom = () => {
+      clearInterval(enteranim);
+      window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
     }
 
     const removeglitch = setTimeout(fadepost, 500)
     
     const checkIntersect = () => {
+      return
       const raycaster = new THREE.Raycaster();
 
       raycaster.setFromCamera(mousepos, camera);
@@ -186,15 +204,11 @@ export function NeonShift3D() {
       const intersects = raycaster.intersectObjects([mesh, mesh2]);
       // const intersects2 = raycaster.intersectObjects([mesh2]);
       if (intersects.length > 0) {
-        primaryMaterial.emissiveIntensity = 0.1;
-        //(mesh.material as THREE.Material).needsUpdate = true;
-      }
-      else if (intersects.length > 0) {
-        primaryMaterial.emissiveIntensity = 0.1;
-        //(mesh.material as THREE.Material).needsUpdate = true;
-      } else {
-        primaryMaterial.emissiveIntensity = 0.0;
-        //(mesh.material as THREE.Material).needsUpdate = true;
+        isAlternateMaterial = !isAlternateMaterial;
+        //gives error but its actually working as intended for simple scenes
+        intersects[0].object.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
+        intersects[0].object.material.needsUpdate = true;
+        
       }
     }
 
@@ -268,7 +282,7 @@ export function NeonShift3D() {
       hblur.uniforms.mouse.value.copy(mousepos);
       composer.render();
     };
-    animate();
+    
     
     // Event Handlers
     const handleResize = () => {
@@ -409,10 +423,8 @@ export function NeonShift3D() {
       const intersects = raycaster.intersectObjects([mesh, mesh2]);
       //const intersects2 = raycaster.intersectObjects([mesh2]);
       if (intersects.length > 0) {
-        isAlternateMaterial = !isAlternateMaterial;
-        intersects[0].object.material = isAlternateMaterial ? accentMaterial : primaryMaterial;
-        intersects[0].object.material.needsUpdate = true;
-        
+        enteranim = setInterval(camerazoom, 10);
+        enterstop = setTimeout(stopcamerazoom, 700);
       }
     };
     
@@ -426,8 +438,8 @@ export function NeonShift3D() {
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('touchend', handleMouseUp);
     currentMount.addEventListener('click', handleClick);
-
-    removeglitch
+    animate();
+    removeglitch;
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
