@@ -1,6 +1,5 @@
 "use client";
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
@@ -16,7 +15,6 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         {children}
-        <Toaster />
       </body>
     </html>
   );
