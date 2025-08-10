@@ -10,8 +10,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { RGBELoader } from 'three/examples/jsm/Addons.js';
 import { UltraHDRLoader } from '../components/ultraHDRLoader';
-
+import {TextureUtils} from '../components/TextureUtils';
 
 export function NeonShift3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -32,7 +33,7 @@ export function NeonShift3D() {
     let scrolliter: NodeJS.Timeout;
     let scrollint: NodeJS.Timeout;
     let clock = new THREE.Clock(false);
-
+    let dragd = 0;
     let enterstop: NodeJS.Timeout;
     let enteranim: NodeJS.Timeout;
 
@@ -52,7 +53,8 @@ export function NeonShift3D() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.toneMappingExposure = 0.3;
+    //renderer.toneMapping = THREE.CineonToneMapping;
+    renderer.toneMappingExposure = 1;
     currentMount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -90,13 +92,15 @@ export function NeonShift3D() {
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
+    const backwall = new THREE.BoxGeometry(currentMount.clientWidth/10, currentMount.clientHeight/10, 1);
     const textgeo = new TextGeometry('three.js')
+
     scene.background = new THREE.Color(0x000000);
     let mesh = new THREE.Mesh(geometry, primaryMaterial);
     let meshtext = new THREE.Mesh(textgeo, primaryMaterial);
 
     let mesh2 = new THREE.Mesh(geometry, primaryMaterial);
-    mesh2.position.y = mesh.position.y - (window.outerHeight / 10);
+    mesh2.position.y = mesh.position.y - 50;
     let mesh2text = new THREE.Mesh(textgeo, primaryMaterial);
 
     let backmesh = new THREE.Mesh(backgeometry, backMaterial);
@@ -105,70 +109,18 @@ export function NeonShift3D() {
     const loadManager = new THREE.LoadingManager();
     const iloader = new THREE.TextureLoader(loadManager);
     const floader = new FontLoader(loadManager);
-    const eloader = new UltraHDRLoader(loadManager);
+    const eloader = new RGBELoader(loadManager);
     const loader = new GLTFLoader(loadManager);
 
-    const wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
-    const wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
-    const wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
+    let wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
+    let wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
+    let wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
     let envtexture = new THREE.DataTexture();
-    loadManager.onProgress = () => {
-      
-    }
-    loadManager.onLoad = () => {
-      animate();
-      loaded.current = true;
-      wtextured.wrapS = THREE.RepeatWrapping;
-      wtextured.wrapT = THREE.RepeatWrapping;
-      wtexturen.wrapS = THREE.RepeatWrapping;
-      wtexturen.wrapT = THREE.RepeatWrapping;
-      wtexturer.wrapS = THREE.RepeatWrapping;
-      wtexturer.wrapT = THREE.RepeatWrapping;
-      wtextured.repeat.set(3,2);
-      wtexturen.repeat.set(3,2);
-      wtexturer.repeat.set(3,2);
-      const wallMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xBB9090,
-        metalness: 0.0,
-        wireframe: false,
-        roughnessMap: wtexturer,
-        roughness: 0.7,
-        normalMap: wtexturen,
-        normalScale: new THREE.Vector2(0.5,0.5),
-        map: wtextured,
-        ior: 1.43,
-        specularIntensity: 0.7,
-      }); 
-      let mesh3 = new THREE.Mesh(backgeometry, wallMaterial);
-      mesh3.position.z = -15
-      
-      scene.background = envtexture;
-      scene.environment = envtexture;
-      
-      scene.add(backmesh)
-      scene.add(mesh3);
-      scene.add(mesh);
-      scene.add(meshtext);
-      scene.add(mesh2);
-      scene.add(mesh2text);
 
-      composer.addPass( renderPass );
-      composer.addPass( bloomPass );
-      composer.addPass( glitchPass );
-      composer.addPass( outputPass );
-
-      removeglitch;
-
-    };
-
-    
-
-    eloader.setDataType( THREE.FloatType );
-
-    eloader.load( `abandoned_garage_4k.jpg`, function ( texture ) {
+    eloader.load( `abandoned_garage_2k.hdr`, function ( texture ) {
       
       texture.mapping = THREE.EquirectangularReflectionMapping;
-      texture.needsUpdate = true;
+      //texture.needsUpdate = true;
       envtexture = texture
       
 
@@ -265,6 +217,53 @@ export function NeonShift3D() {
         
     });
 
+    loadManager.onProgress = () => {
+      
+    }
+    loadManager.onLoad = () => {
+      
+      loaded.current = true;
+      console.log(window.devicePixelRatio)
+      wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1 : 0.5 )
+      wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1 : 0.5 )
+      wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1 : 0.5 )
+
+      const wallMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xBB9090,
+        metalness: 0.0,
+        wireframe: false,
+        roughnessMap: wtexturer,
+        roughness: 0.7,
+        normalMap: wtexturen,
+        normalScale: new THREE.Vector2(0.5,0.5),
+        map: wtextured,
+        ior: 1.43,
+        specularIntensity: 0.7,
+      }); 
+      let mesh3 = new THREE.Mesh(backwall, wallMaterial);
+      mesh3.position.z = -15
+      
+      //scene.background = envtexture;
+      scene.environment = envtexture;
+      
+      scene.add(backmesh)
+      scene.add(mesh3);
+      scene.add(mesh);
+      scene.add(meshtext);
+      scene.add(mesh2);
+      scene.add(mesh2text);
+
+      composer.addPass( renderPass );
+      composer.addPass( bloomPass );
+      composer.addPass( glitchPass );
+      composer.addPass( outputPass );
+
+      removeglitch;
+
+    };
+
+    
+
     
     // This code now runs only on the client, avoiding hydration errors
     camera.position.z = 35 + window.outerWidth / 100;
@@ -274,13 +273,6 @@ export function NeonShift3D() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0x6A3CBC, 3.0, 100);
-    pointLight1.position.set(20, 20, 20);
-    scene.add(pointLight1);
-    
-    const pointLight2 = new THREE.PointLight(0x39FF14, 3.0, 100);
-    pointLight2.position.set(-20, -20, -20);
-    scene.add(pointLight2);
 
     const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.3);
     directionalLight3.position.set(30, 0, 20);
@@ -294,7 +286,6 @@ export function NeonShift3D() {
     directionalLight.position.set(0, -30, 0);
     scene.add(directionalLight);
 
-    
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
@@ -310,7 +301,6 @@ export function NeonShift3D() {
 
     const fadepost = () => {
       glitchPass.enabled = false;
-      
     }
 
     const camerazoom = () => {
@@ -330,7 +320,7 @@ export function NeonShift3D() {
       window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
     }
 
-    const removeglitch = setTimeout(fadepost, 3000)
+    const removeglitch = setTimeout(fadepost, 2500)
     
     const checkIntersect = () => {
       return
@@ -350,7 +340,9 @@ export function NeonShift3D() {
     }
 
     const snapScroll = () => {
-      if (mesh.position.y < -1) {
+      let et = clock.getElapsedTime() + 1 * 1.2;
+
+      if (mesh.position.y < -0.5) {
         mesh.position.y += 0.25;
         mesh2.position.y += 0.25;
         timeoutid = setTimeout(snapScroll, 10);
@@ -365,7 +357,7 @@ export function NeonShift3D() {
         mesh2.position.y += 0.25;
         timeoutid = setTimeout(snapScroll, 10);
       }
-      else if (mesh2.position.y > 1 && mesh2.position.y < (window.outerHeight / 20)) {
+      else if (mesh2.position.y > 1 && mesh2.position.y < (window.outerHeight / 15)) {
         mesh.position.y -= 0.25;
         mesh2.position.y -= 0.25;
         timeoutid = setTimeout(snapScroll, 10);
@@ -378,7 +370,8 @@ export function NeonShift3D() {
     const snapBack = () => {
         //handle the snap back in place timeout on scrolling
         clearTimeout(timeoutid)
-        timeoutid = setTimeout(snapScroll, 650);
+        clock.start();
+        timeoutid = setTimeout(snapScroll, 70);
     }
 
     const mouseover = () => {
@@ -395,7 +388,7 @@ export function NeonShift3D() {
           mesh2.position.y += translation;
           
         }
-      } else if (mesh2.position.y < 2) {
+      } else if (mesh2.position.y < 5) {
         //mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( translation / 10))
         //mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( translation / 10))
         mesh.position.y += translation;
@@ -424,10 +417,13 @@ export function NeonShift3D() {
       mousepos.y = (event.touches[0].clientY / currentMount.clientHeight) * -2 + 1;
 
       const deltay = diff - event.touches[0].screenY;
+      dragd = deltay;
       const deltax = diffx - event.touches[0].screenX;
+      diff = event.touches[0].screenY;
+      diffx = event.touches[0].screenX;
       const myAxis = new THREE.Vector3(0, -1, 0);
-
-      const translation = (deltay / window.outerHeight);
+      
+      const translation = (deltay / 1000);
       const rotation = (deltax / window.outerWidth) * 5;
 
       //prevent scroll to refresh on mobile
@@ -435,56 +431,45 @@ export function NeonShift3D() {
         event.preventDefault();
       }
 
-      handleTranslate(deltay, translation * 25)
+      handleTranslate(deltay, translation * 35)
 
       mesh.rotateOnWorldAxis(myAxis, ( rotation ))
       mesh2.rotateOnWorldAxis(myAxis, ( rotation ))
 
-      diff = event.touches[0].screenY;
-      diffx = event.touches[0].screenX;
-
-      if (deltay < 0 ) {
-        scrollkinetic(0.7, deltay/50 )
-      } else {
-        scrollkinetic(0.7, deltay/50 )
-      }
-      
-
-      checkIntersect()
     }
 
     const scrollstep = (delta:number) => {
       let et = clock.getElapsedTime() + 1 * 1.2;
       
-      if (mesh.position.y > -1 && mesh2.position.y < 5) {
-        mesh.position.y += (delta / et);
-        mesh2.position.y += (delta / et);
-      } else {
-        clearInterval(scrollint)
-        clearTimeout(scrolliter)
-        clock.stop()
-      }
+      mesh.position.y += (delta / et);
+      mesh2.position.y += (delta / et);
+      
     }
 
     const stopkinetic = () => {
       clearInterval(scrollint)
       clearTimeout(scrolliter)
       clock.stop()
+      snapBack()
     }
 
     const scrollkinetic = (delta: number, speed: number) => {
-      clearInterval(scrollint)
-      clearTimeout(scrolliter)
-      if (mesh.position.y > -1) {
+      if (mesh.position.y > -1 && mesh2.position.y < 5) {
+        clearTimeout(timeoutid)
+        clearInterval(scrollint)
+        clearTimeout(scrolliter)
         clock.start()
         scrollint = setInterval(scrollstep, 10, delta * speed)
-        scrolliter = setTimeout(stopkinetic, 650)
+        scrolliter = setTimeout(stopkinetic, 550)
+      } else {
+        snapBack()
       }
+      
     }
 
     const handleScroll = (event: WheelEvent) => {
-        scrollkinetic(event.deltaY / 100, 1)
-        snapBack()
+        scrollkinetic(event.deltaY / 60, 0.5)
+        //snapBack()
     };
 
     const handleMouseDown = (event: MouseEvent) => {
@@ -517,26 +502,29 @@ export function NeonShift3D() {
       mousepos.x = (event.clientX / window.innerWidth) * 2 - 1;
       mousepos.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-      handleTranslate(-deltaY, -translation)
-      if (deltaY < 0) {
-        scrollkinetic(0.7, 1)
-      } else {
-        scrollkinetic(0.7, -1)
-      }
-      
-
-      checkIntersect()
-
       previousMousePositionRef.current = { x: event.clientX, y: event.clientY };
     };
 
     const handleMouseUp = () => {
+      dragd = 0;
       isDraggingRef.current = false;
-      snapBack()
-      
-      
+      //snapBack()
     };
-    
+
+    const handleTouchUp = () => {
+      isDraggingRef.current = false;
+      console.log(dragd);
+      if (dragd > 20 ) {
+        dragd = 20;
+      } else if (dragd < -20 ) {
+        dragd = -20;
+      }
+      if (dragd < 0 ) {
+        scrollkinetic(0.9, dragd/20 )
+      } else if (dragd > 0) {
+        scrollkinetic(0.9, dragd/20 )
+      }
+    };
 
     const handleClick = (event: MouseEvent) => {
       if (wasDraggedRef.current) return;
@@ -565,18 +553,20 @@ export function NeonShift3D() {
     currentMount.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('touchend', handleMouseUp);
+    window.addEventListener('touchend', handleTouchUp);
     currentMount.addEventListener('click', handleClick);
-    
+    animate();
     
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      document.removeEventListener('wheel', handleScroll);
       document.removeEventListener('touchmove', handledragtouch);
+      document.removeEventListener('touchstart', handletouch);
+      document.removeEventListener('wheel', handleScroll);
       currentMount.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchUp);
       currentMount.removeEventListener('click', handleClick);
 
       cancelAnimationFrame(frameId);
@@ -584,8 +574,13 @@ export function NeonShift3D() {
         currentMount.removeChild(rendererRef.current.domElement);
       }
       geometry.dispose();
+      backgeometry.dispose();
+      backwall.dispose();
+      textgeo.dispose();
       primaryMaterial.dispose();
       accentMaterial.dispose();
+      backMaterial.dispose();
+      
       renderer.dispose();
       composer.dispose();
       
