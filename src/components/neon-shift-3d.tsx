@@ -36,6 +36,7 @@ export function NeonShift3D() {
     let scrollint: NodeJS.Timeout;
     let clock = new THREE.Clock(false);
     let dragd = 0;
+    let dragx = 0;
     let enterstop: NodeJS.Timeout;
     let enteranim: NodeJS.Timeout;
 
@@ -299,6 +300,7 @@ export function NeonShift3D() {
     const stopcamerazoom = () => {
       clearInterval(enteranim);      
       window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
+      rendererRef.current = null;
     }
 
     const checkIntersect = () => {
@@ -353,6 +355,8 @@ export function NeonShift3D() {
     };
 
     const handletouch = (event: TouchEvent) => {
+      dragd = 0;
+      dragx = 0;
       diff = event.touches[0].screenY;
       diffx = event.touches[0].screenX;
       
@@ -364,7 +368,9 @@ export function NeonShift3D() {
 
       const deltay = diff - event.touches[0].screenY;
       const deltax = diffx - event.touches[0].screenX;
+      
       dragd += deltay;
+      dragx += deltax;
       diff = event.touches[0].screenY;
       diffx = event.touches[0].screenX;
       const myAxis = new THREE.Vector3(0, -1, 0);
@@ -431,14 +437,17 @@ export function NeonShift3D() {
     };
 
     const handleTouchUp = () => {
+      
       isDraggingRef.current = false;
       console.log(dragd);
-      if (dragd > 20) {
+      if (dragd > 55) {
         mesh.position.y += 1.1;
-      } else if (dragd < -20) {
+      } else if (dragd < -55) {
         mesh2.position.y -= 1.1
-      }
+      } 
+      
       snapBack()
+      
     };
 
     const handleClick = (event: MouseEvent) => {
