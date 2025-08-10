@@ -24,7 +24,7 @@ export function NeonShift3D() {
   const wasDraggedRef = useRef(false);
   const previousMousePositionRef = useRef({ x: 0, y: 0 });
   
-
+  
   
   useEffect(() => {
     if (!mountRef.current) return;
@@ -34,13 +34,18 @@ export function NeonShift3D() {
     let timeoutid: NodeJS.Timeout;
     let scrolliter: NodeJS.Timeout;
     let scrollint: NodeJS.Timeout;
-    let clock = new THREE.Clock(false);
     let dragd = 0;
     let dragx = 0;
-    let enterstop: NodeJS.Timeout;
     let enteranim: NodeJS.Timeout;
+    let enterstop: NodeJS.Timeout;
 
-    // Animation loop
+    let gss1: GSAPAnimation;
+    let gss2: GSAPAnimation;
+    let gss3: GSAPAnimation;
+    let gss4: GSAPAnimation;
+    let gsap1 = gsap.to({x:0,y:0}, {duration: 1, y:0}).pause();
+    let gsap2: GSAPAnimation;
+
     let frameId: number;
 
     const currentMount = mountRef.current;
@@ -51,7 +56,6 @@ export function NeonShift3D() {
     // Camera
     const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
     
-
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
@@ -92,6 +96,15 @@ export function NeonShift3D() {
       transparent: true,
       opacity: 0,
     });
+    const wallMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xBB9090,
+      metalness: 0.0,
+      wireframe: false,
+      roughness: 0.7,
+      normalScale: new THREE.Vector2(0.5,0.5),
+      ior: 1.43,
+      specularIntensity: 0.7,
+    });
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
@@ -99,16 +112,16 @@ export function NeonShift3D() {
     const textgeo = new TextGeometry('three.js')
 
     scene.background = new THREE.Color(0x000000);
+    camera.position.z = 35 + window.outerWidth / 100;
+
     let mesh = new THREE.Mesh(geometry, primaryMaterial);
     let meshtext = new THREE.Mesh(textgeo, primaryMaterial);
-
     let mesh2 = new THREE.Mesh(geometry, primaryMaterial);
-    mesh2.position.y = mesh.position.y - 50;
     let mesh2text = new THREE.Mesh(textgeo, primaryMaterial);
-
     let mesh3 = new THREE.Mesh(backwall, backMaterial);
-
     let backmesh = new THREE.Mesh(backgeometry, backMaterial);
+
+    
     backmesh.position.z = -14
 
     const loadManager = new THREE.LoadingManager();
@@ -125,14 +138,25 @@ export function NeonShift3D() {
     loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
       const root = gltf.scene
       let locscene = root.getObjectByName('Pen');
-      mesh = locscene.children[0]
+      if (locscene?.children[0]) {
+        mesh.copy(locscene.children[0])
+        mesh2.copy(locscene.children[0])
+      }
       mesh.rotateY(1.4);
       mesh.rotateX(-0.5);
-      mesh.geometry.scale(3,3,3)
+      mesh.geometry.scale(1.8,1.8,1.8)
       //mesh.rotation.y = 1.3;
       //mesh.rotation.x = 0.5;
       mesh.material.transparent = true;
       
+      mesh2.rotateY(1.4);
+      mesh2.rotateX(-0.5);
+      mesh2.geometry.scale(1.8,1.8,1.8);
+      mesh2.position.y = mesh.position.y - 90
+      //mesh.rotation.y = 1.3;
+      //mesh.rotation.x = 0.5;
+      mesh2.material.transparent = true;
+      locscene?.clear()
       //scene.add(root);
     }, undefined, function ( error ) {
   
@@ -164,24 +188,6 @@ export function NeonShift3D() {
         
         
     });
-
-    loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
-      const root = gltf.scene
-      let locscene = root.getObjectByName('Pen');
-      mesh2 = locscene.children[0]
-      mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 1.3);
-      mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 0, 1), 1);
-      mesh2.geometry.scale(3,3,3)
-      mesh2.position.y = mesh.position.y - (window.outerHeight / 15);
-      //mesh.rotation.y = 1.3;
-      //mesh.rotation.x = 0.5;
-      
-      //scene.add(root);
-    }, undefined, function ( error ) {
-  
-      console.error( error );
-  
-    } );
     
     floader.load('Bahianita_Regular.json', (font) => {
       const text = 'BLOODY INK';  
@@ -213,21 +219,16 @@ export function NeonShift3D() {
       wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.2 : 0.5 )
       wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1.2 : 0.5 )
 
-      const wallMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xBB9090,
-        metalness: 0.0,
-        wireframe: false,
-        roughnessMap: wtexturer,
-        roughness: 0.7,
-        normalMap: wtexturen,
-        normalScale: new THREE.Vector2(0.5,0.5),
-        map: wtextured,
-        ior: 1.43,
-        specularIntensity: 0.7,
-      }); 
       mesh3.material = wallMaterial;
+      mesh3.material.roughnessMap = wtexturer,
+      mesh3.material.normalMap = wtexturen,
+      mesh3.material.map = wtextured,
+      
       mesh3.position.z = -15
       
+      meshtext.position.y = mesh.position.y - 10;
+      mesh2text.position.y = mesh2.position.y - 10;
+
       scene.add(backmesh)
       scene.add(mesh3);
       scene.add(mesh);
@@ -239,13 +240,11 @@ export function NeonShift3D() {
       composer.addPass( bloomPass );
       composer.addPass( glitchPass );
       composer.addPass( outputPass );
-
+      setgsap();
       removeglitch;
 
     };
 
-    // This code now runs only on the client, avoiding hydration errors
-    camera.position.z = 35 + window.outerWidth / 100;
     
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -272,8 +271,7 @@ export function NeonShift3D() {
         mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
         mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
       }
-      meshtext.position.y = mesh.position.y - 10;
-      mesh2text.position.y = mesh2.position.y - 10;
+      
 
       composer.render();
 
@@ -283,7 +281,7 @@ export function NeonShift3D() {
     const fadepost = () => {
       glitchPass.enabled = false;
     }
-    const removeglitch = setTimeout(fadepost, 2500)
+    const removeglitch = setTimeout(fadepost, 1500)
 
     const camerazoom = () => {
       if (camera.position.z > -5 ) {
@@ -298,9 +296,12 @@ export function NeonShift3D() {
     }
     
     const stopcamerazoom = () => {
-      clearInterval(enteranim);      
+      clearInterval(enteranim);
+      if (rendererRef.current) {
+        currentMount.removeChild(rendererRef.current.domElement);
+      }
       window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
-      rendererRef.current = null;
+      scene.clear();
     }
 
     const checkIntersect = () => {
@@ -320,24 +321,33 @@ export function NeonShift3D() {
       }
     }
 
-    let gsap1;
-    let gsap2;
+    
     const snapScroll = () => {
+
        if (mesh.position.y < 0) {
         gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
+
+        gsap.to(meshtext.position, {duration: 2, y:0})
+        gsap.to(mesh2text.position, {duration: 2, y:-(window.outerHeight / 15)})
       }
       else if (mesh.position.y > 0 && mesh2.position.y < -25) {
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:0})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:(window.outerHeight / 15)})
+        gsap.to(mesh2text.position, {duration: 2, y:-10})
+        gsap.to(meshtext.position, {duration: 2, y:(window.outerHeight / 15)})
       } 
       else if (mesh.position.y > 0 && mesh2.position.y < 0) {
         gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
+        gsap.to(meshtext.position, {duration: 2, y:-10})
+        gsap.to(mesh2text.position, {duration: 2, y:-(window.outerHeight / 15)})
       }
       else if (mesh2.position.y > 0 && mesh2.position.y < (window.outerHeight / 15)) {
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:0})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:(window.outerHeight / 15)})
+        gsap.to(mesh2text.position, {duration: 2, y:0})
+        gsap.to(meshtext.position, {duration: 2, y:-(window.outerHeight / 15)})
       }
     }
 
@@ -394,16 +404,32 @@ export function NeonShift3D() {
         } else if (event.deltaY < 0) {
           mesh2.position.y -= 1.1
         }
-        snapBack()
+        snapScroll()
     };
-
+    const setgsap = () => {
+      gss1 = gsap.to(mesh.position, {duration: 1, z:mesh.position.z +7}).pause()
+      gss2 = gsap.to(meshtext.position, {duration: 1, y:meshtext.position.y -5}).pause()
+      gss3 = gsap.to(mesh2.position, {duration: 1, z:mesh2.position.z +7}).pause()
+      gss4 = gsap.to(mesh2text.position, {duration: 1, y:mesh2text.position.y -5}).pause()
+    }
+    
     const handleMouseDown = (event: MouseEvent) => {
+      if (!gss1.isActive() && !gsap1.isActive()) {
+        setgsap();
+      }
       isDraggingRef.current = true;
       wasDraggedRef.current = false;
       clearTimeout(timeoutid)
       clearInterval(scrollint)
       clearTimeout(scrolliter)
       previousMousePositionRef.current = { x: event.clientX, y: event.clientY };
+      if (!gsap1.isActive()) {
+        gss1.play()
+        gss2.play()
+        gss3.play()
+        gss4.play()
+      }
+      console.log('mousedown')
     };
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -411,7 +437,7 @@ export function NeonShift3D() {
         //update mouse position uniform inside shader
         mousepos.x = (event.clientX / window.innerWidth) * 2 - 1;
         mousepos.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        checkIntersect()
+        //checkIntersect()
         return
       };
       wasDraggedRef.current = true;
@@ -433,6 +459,10 @@ export function NeonShift3D() {
     const handleMouseUp = () => {
       dragd = 0;
       isDraggingRef.current = false;
+      gss1.reverse()
+      gss2.reverse()
+      gss3.reverse()
+      gss4.reverse()
       //snapBack()
     };
 
@@ -493,9 +523,9 @@ export function NeonShift3D() {
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchend', handleTouchUp);
       currentMount.removeEventListener('click', handleClick);
-
+      
       cancelAnimationFrame(frameId);
-      if (rendererRef.current && currentMount.contains(rendererRef.current.domElement)) {
+      if (rendererRef.current) {
         currentMount.removeChild(rendererRef.current.domElement);
       }
       geometry.dispose();
