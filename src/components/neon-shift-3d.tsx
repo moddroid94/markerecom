@@ -246,9 +246,6 @@ export function NeonShift3D() {
 
     };
 
-    
-
-    
     // This code now runs only on the client, avoiding hydration errors
     camera.position.z = 35 + window.outerWidth / 100;
     
@@ -275,7 +272,7 @@ export function NeonShift3D() {
     scene.add(directionalLight4);
 
     const animate = () => {
-      frameId = requestAnimationFrame(animate);
+      
       if (!isDraggingRef.current) {
         mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
         mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
@@ -284,6 +281,8 @@ export function NeonShift3D() {
       mesh2text.position.y = mesh2.position.y - 10;
 
       composer.render();
+      
+      frameId = requestAnimationFrame(animate);
     };
 
     const fadepost = () => {
