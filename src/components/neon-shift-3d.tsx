@@ -115,20 +115,7 @@ export function NeonShift3D() {
     let wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
     let wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
     let wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
-    let envtexture = new THREE.DataTexture();
-
-    eloader.load( `abandoned_garage_2k.hdr`, function ( texture ) {
-      
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      //texture.needsUpdate = true;
-      envtexture = texture
-      
-
-    }, function () {
-      return
-    }, function () {
-      return
-    });
+    
 
     loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
       const root = gltf.scene
@@ -154,16 +141,16 @@ export function NeonShift3D() {
           font: font,
           size: 5,  
       
-          depth: 0.2,  
+          depth: 0.5,  
       
           curveSegments: 12,  
       
           bevelEnabled: true,  
-          bevelThickness: 0.15,  
+          bevelThickness: 0.05,  
       
-          bevelSize: 0.3,  
+          bevelSize: 0.06,  
       
-          bevelSegments: 5,  
+          bevelSegments: 3,  
       
         });
         meshtext = new THREE.Mesh(geometry, primaryMaterial)
@@ -198,16 +185,16 @@ export function NeonShift3D() {
           font: font,
           size: 5,  
       
-          depth: 0.2,  
+          depth: 0.5,  
       
           curveSegments: 12,  
       
           bevelEnabled: true,  
-          bevelThickness: 0.15,  
+          bevelThickness: 0.05,  
       
-          bevelSize: 0.3,  
+          bevelSize: 0.06,  
       
-          bevelSegments: 5,  
+          bevelSegments: 3,   
       
         });
         mesh2text = new THREE.Mesh(geometry, primaryMaterial)
@@ -243,9 +230,6 @@ export function NeonShift3D() {
       let mesh3 = new THREE.Mesh(backwall, wallMaterial);
       mesh3.position.z = -15
       
-      //scene.background = envtexture;
-      scene.environment = envtexture;
-      
       scene.add(backmesh)
       scene.add(mesh3);
       scene.add(mesh);
@@ -270,22 +254,25 @@ export function NeonShift3D() {
     
  
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
 
-    const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.3);
+    const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight3.position.set(30, 0, 20);
     scene.add(directionalLight3);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.2);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight2.position.set(0, 30, 0);
     scene.add(directionalLight2);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
     directionalLight.position.set(0, -30, 0);
     scene.add(directionalLight);
 
+    const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight4.position.set(2, -6, 20);
+    scene.add(directionalLight4);
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
