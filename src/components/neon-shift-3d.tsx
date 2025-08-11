@@ -15,7 +15,6 @@ import { UltraHDRLoader } from '../components/ultraHDRLoader';
 import {TextureUtils} from '../components/TextureUtils';
 import { gsap } from 'gsap';
 
-
 export function NeonShift3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -299,9 +298,11 @@ export function NeonShift3D() {
         currentMount.removeChild(rendererRef.current.domElement);
       }
       scene.clear();
-      composer.dispose()
-      window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
+      composer.dispose();
+      location.reload();
+      window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
+    
 
     const checkIntersect = () => {
       return
