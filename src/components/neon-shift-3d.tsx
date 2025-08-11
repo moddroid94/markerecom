@@ -287,9 +287,8 @@ export function NeonShift3D() {
     }
     
     const stopcamerazoom = () => {
-      if (rendererRef.current) {
-        currentMount.removeChild(rendererRef.current.domElement);
-      }
+      
+      
       
       geometry.dispose();
       backgeometry.dispose();
@@ -301,6 +300,7 @@ export function NeonShift3D() {
       scene.clear();
       renderer.dispose();
       composer.dispose();
+      currentMount.removeChild(rendererRef.current.domElement);
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
     
