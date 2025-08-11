@@ -185,8 +185,6 @@ export function NeonShift3D() {
         meshtext = new THREE.Mesh(geometry, primaryMaterial)
         meshtext.position.x = -5.7
         meshtext.position.z = 15;
-        
-        
     });
     
     floader.load('Bahianita_Regular.json', (font) => {
@@ -300,8 +298,9 @@ export function NeonShift3D() {
       if (rendererRef.current) {
         currentMount.removeChild(rendererRef.current.domElement);
       }
-      window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
       scene.clear();
+      composer.dispose()
+      window.location.href = "https://inkomnia.bigcartel.com/product/bloody";
     }
 
     const checkIntersect = () => {
@@ -325,6 +324,7 @@ export function NeonShift3D() {
     const snapScroll = () => {
 
        if (mesh.position.y < 0) {
+        mesh.getWorldPosition
         gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
 
