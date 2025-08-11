@@ -12,10 +12,7 @@ export default function Home() {
     prel.className = "text-white transition opacity-100"
     gsap.to("#logosvg", {duration:2, delay:1, margin:0, scale:1})
   }, 20);
-  let fadereload = setTimeout(() => {
-    let after = document.getElementById('reload')
-    after.className = "fixed flex top-0 bg-transparent backdrop-blur-sm w-full h-20 z-10 opacity-100"
-  }, 2000);
+  
 
   return (
     <div className="h-full bg-transparent ">
