@@ -233,7 +233,7 @@ export function NeonShift3D() {
       composer.addPass( glitchPass );
       composer.addPass( outputPass );
       setgsap();
-      removeglitch;
+      setTimeout(fadepost, 500)
 
     };
 
@@ -273,7 +273,6 @@ export function NeonShift3D() {
     const fadepost = () => {
       glitchPass.enabled = false;
     }
-    const removeglitch = setTimeout(fadepost, 1500)
 
     const camerazoom = () => {
       gsap.to(camera.position, {duration:1, z:-5})
@@ -287,9 +286,6 @@ export function NeonShift3D() {
     }
     
     const stopcamerazoom = () => {
-      
-      
-      
       geometry.dispose();
       backgeometry.dispose();
       backwall.dispose();
@@ -304,7 +300,6 @@ export function NeonShift3D() {
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
     
-
     const checkIntersect = () => {
       return
       const raycaster = new THREE.Raycaster();
@@ -322,7 +317,6 @@ export function NeonShift3D() {
       }
     }
 
-    
     const snapScroll = () => {
 
        if (mesh.position.y < 0) {
@@ -332,14 +326,17 @@ export function NeonShift3D() {
 
         gsap.to(meshtext.position, {duration: 2, y:0})
         gsap.to(mesh2text.position, {duration: 2, y:-(window.outerHeight / 15)})
+        gsap.to(mesh3.rotation, {duration:2, z:90})
       }
       else if (mesh.position.y > 0 && mesh2.position.y < -25) {
+        gsap.to(mesh3.rotation, {duration:2, x:-0.05, y:-0.10})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:0})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:(window.outerHeight / 15)})
         gsap.to(mesh2text.position, {duration: 2, y:-10})
         gsap.to(meshtext.position, {duration: 2, y:(window.outerHeight / 15)})
       } 
       else if (mesh.position.y > 0 && mesh2.position.y < 0) {
+        gsap.to(mesh3.rotation, {duration:2, x:0.05, y:0.10})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
         gsap.to(meshtext.position, {duration: 2, y:-10})
