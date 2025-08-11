@@ -35,8 +35,6 @@ export function NeonShift3D() {
     let scrollint: NodeJS.Timeout;
     let dragd = 0;
     let dragx = 0;
-    let enteranim: NodeJS.Timeout;
-    let enterstop: NodeJS.Timeout;
 
     let gss1: GSAPAnimation;
     let gss2: GSAPAnimation;
@@ -281,25 +279,31 @@ export function NeonShift3D() {
     const removeglitch = setTimeout(fadepost, 1500)
 
     const camerazoom = () => {
-      if (camera.position.z > -5 ) {
-        camera.position.z -= 1;
-      }
-      if (mesh.material.opacity > 0.03) {
-        mesh.material.opacity -= 0.04;
-      }
-      if (backmesh.material.opacity < 0.99) {
-      backmesh.material.opacity += 0.02;
-      }
+      gsap.to(camera.position, {duration:1, z:-5})
+      gsap.to(mesh.material, {duration:0.7, opacity:0})
+      gsap.to(mesh2.material, {duration:0.7, opacity:0})
+      gsap.to(backmesh.material, {duration:0.7, opacity:1})
+      .eventCallback('onComplete', () => {
+        stopcamerazoom()
+      })
+ 
     }
     
     const stopcamerazoom = () => {
-      clearInterval(enteranim);
       if (rendererRef.current) {
         currentMount.removeChild(rendererRef.current.domElement);
       }
+      
+      geometry.dispose();
+      backgeometry.dispose();
+      backwall.dispose();
+      textgeo.dispose();
+      primaryMaterial.dispose();
+      accentMaterial.dispose();
+      backMaterial.dispose();
       scene.clear();
+      renderer.dispose();
       composer.dispose();
-      location.reload();
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
     
@@ -496,8 +500,7 @@ export function NeonShift3D() {
       if (intersects.length > 0) {
         glitchPass.enabled = true;
         composer.addPass( glitchPass );
-        enteranim = setInterval(camerazoom, 10);
-        enterstop = setTimeout(stopcamerazoom, 700);
+        camerazoom()
       }
     };
     
@@ -529,6 +532,7 @@ export function NeonShift3D() {
       if (rendererRef.current) {
         currentMount.removeChild(rendererRef.current.domElement);
       }
+      
       geometry.dispose();
       backgeometry.dispose();
       backwall.dispose();
@@ -536,7 +540,7 @@ export function NeonShift3D() {
       primaryMaterial.dispose();
       accentMaterial.dispose();
       backMaterial.dispose();
-      
+      scene.clear()
       renderer.dispose();
       composer.dispose();
       
