@@ -324,10 +324,27 @@ export function NeonShift3D() {
     }
     
     const stopcamerazoom = () => {
-      scene.clear();
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('touchmove', handledragtouch);
+      document.removeEventListener('touchstart', handletouch);
+      document.removeEventListener('wheel', handleScroll);
+      currentMount.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchUp);
+      currentMount.removeEventListener('click', handleClick);
+      
+      cancelAnimationFrame(frameId);
+      if (rendererRef.current) {
+        currentMount.removeChild(rendererRef.current.domElement);
+      }
+      
+      primaryMaterial.dispose();
+      accentMaterial.dispose();
+      backMaterial.dispose();
+      scene.clear()
       renderer.dispose();
       composer.dispose();
-      document.getElementById(rendererRef.current.domElement.id)?.remove()
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
     
