@@ -95,17 +95,17 @@ export function NeonShift3D() {
     });
     const wallMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xBB9090,
-      metalness: 0.0,
+      metalness: 0.1,
       wireframe: false,
-      roughness: 0.7,
-      normalScale: new THREE.Vector2(0.5,0.5),
-      ior: 1.43,
-      specularIntensity: 0.7,
+      roughness: 1.8,
+      displacementScale: 1.5,
+      ior: 1.73,
+      specularIntensity: 0.4,
     });
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
-    const backwall = new THREE.BoxGeometry(currentMount.clientWidth/10, currentMount.clientHeight/10, 1);
+    const backwall = new THREE.BoxGeometry(currentMount.clientWidth/7, currentMount.clientHeight/7, 1,200,200);
     const textgeo = new TextGeometry('three.js')
 
     scene.background = new THREE.Color(0x000000);
@@ -130,7 +130,6 @@ export function NeonShift3D() {
     let wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
     let wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
     let wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
-    
 
     loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
       const root = gltf.scene
@@ -162,7 +161,7 @@ export function NeonShift3D() {
     } );
 
     floader.load('Bahianita_Regular.json', (font) => {
-      const text = 'BLOODY';  
+        const text = 'BLOODY';  
         const geometry = new TextGeometry(text, {
           font: font,
           size: 5,  
@@ -182,11 +181,9 @@ export function NeonShift3D() {
         meshtext = new THREE.Mesh(geometry, primaryMaterial)
         meshtext.position.x = -5.7
         meshtext.position.z = 15;
-    });
-    
-    floader.load('Bahianita_Regular.json', (font) => {
-      const text = 'BLOODY INK';  
-        const geometry = new TextGeometry(text, {
+
+        const text2 = 'BLOODY INK';  
+        const geometry2 = new TextGeometry(text2, {
           font: font,
           size: 5,  
       
@@ -202,24 +199,24 @@ export function NeonShift3D() {
           bevelSegments: 3,   
       
         });
-        mesh2text = new THREE.Mesh(geometry, primaryMaterial)
+        mesh2text = new THREE.Mesh(geometry2, primaryMaterial)
         mesh2text.position.x = -9
         mesh2text.position.z = 15;
-        
-        
     });
 
     loadManager.onLoad = () => {
-      wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1.2 : 0.5 )
-      wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.2 : 0.5 )
-      wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1.2 : 0.5 )
+      wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
+      wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
+      wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
 
       mesh3.material = wallMaterial;
-      mesh3.material.roughnessMap = wtexturer,
+      mesh3.material.roughnessMap = wtextured,
       mesh3.material.normalMap = wtexturen,
+      mesh3.material.displacementMap = wtexturen,
       mesh3.material.map = wtextured,
       
       mesh3.position.z = -15
+      mesh3.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.10))
       
       meshtext.position.y = mesh.position.y - 10;
       mesh2text.position.y = mesh2.position.y - 10;
