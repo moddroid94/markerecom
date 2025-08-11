@@ -27,6 +27,7 @@ export function NeonShift3D() {
   
   useEffect(() => {
     if (!mountRef.current) return;
+    
     let diff = 0;
     let diffx = 0;
     let mousepos =  new THREE.Vector2(0,0);
@@ -45,14 +46,42 @@ export function NeonShift3D() {
 
     let frameId: number;
 
+    let primaryMaterial: THREE.MeshPhysicalMaterial;
+    let accentMaterial: THREE.MeshStandardMaterial;
+    let backMaterial: THREE.MeshStandardMaterial;
+    let wallMaterial: THREE.MeshPhysicalMaterial;
+    
+    let mesh: THREE.Mesh;
+    let mesh2: THREE.Mesh;
+    let mesh3: THREE.Mesh;
+    let meshtext: THREE.Mesh;
+    let mesh2text: THREE.Mesh;
+    let backmesh: THREE.Mesh;
+
+    let composer: EffectComposer;
+    let renderPass: RenderPass;
+    let outputPass: OutputPass;
+    let glitchPass: GlitchPass;
+    let bloomPass: UnrealBloomPass;
+
+    let wtextured: THREE.Texture;
+    let wtexturen: THREE.Texture;
+    let wtexturer: THREE.Texture;
+
+    const loadManager = new THREE.LoadingManager();
+    const iloader = new THREE.TextureLoader(loadManager);
+    const floader = new FontLoader(loadManager);
+    const loader = new GLTFLoader(loadManager);
     const currentMount = mountRef.current;
 
     // Scene
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
 
     // Camera
     const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
-    
+    camera.position.z = 35 + window.outerWidth / 100;
+
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
@@ -62,148 +91,150 @@ export function NeonShift3D() {
     currentMount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const composer = new EffectComposer( renderer );
+    const initmats = () => {
+      primaryMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x921C1C,
+        metalness: 0.9,
+        roughness: 0.3,
+        emissive: 0xFFFFFF,
+        emissiveIntensity: 0,
+        wireframe: false,
+      });
+      accentMaterial = new THREE.MeshStandardMaterial({
+        color: 0x39FF14,
+        emissive: 0x39FF14,
+        emissiveIntensity: 0.1,
+        metalness: 0.2,
+        roughness: 0.6,
+        wireframe: true,
+      });
+      backMaterial = new THREE.MeshStandardMaterial({
+        color: 0x000000,
+        metalness: 0.2,
+        roughness: 0.6,
+        wireframe: false,
+        transparent: true,
+        opacity: 0,
+      });
+      wallMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xBB9090,
+        metalness: 0.1,
+        wireframe: false,
+        roughness: 1.8,
+        displacementScale: 1.5,
+        ior: 1.73,
+        specularIntensity: 0.4,
+      });
+
+      wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
+      wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
+      wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
+    }
+
+    const initcomposer = () => {
+      composer = new EffectComposer( renderer );
+      renderPass = new RenderPass( scene, camera );
+      outputPass = new OutputPass();
+      glitchPass = new GlitchPass();
+      bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 0.3, 0.5, 0.95 );
+    }
     
-    const renderPass = new RenderPass( scene, camera );
-    const outputPass = new OutputPass();
-    const glitchPass = new GlitchPass();
-    const bloomPass = new UnrealBloomPass( new THREE.Vector2( currentMount.clientHeight, currentMount.clientWidth ), 0.3, 0.5, 0.95 );
+    const initgeos = () => {
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
+      const backwall = new THREE.BoxGeometry(currentMount.clientWidth/7, currentMount.clientHeight/7, 1,200,200);
+      const textgeo = new TextGeometry('three.js')
+      mesh = new THREE.Mesh(geometry, primaryMaterial);
+      meshtext = new THREE.Mesh(textgeo, primaryMaterial);
+      mesh2 = new THREE.Mesh(geometry, primaryMaterial);
+      mesh2text = new THREE.Mesh(textgeo, primaryMaterial);
+      mesh3 = new THREE.Mesh(backwall, backMaterial);
+      backmesh = new THREE.Mesh(backgeometry, backMaterial);
+
+      backmesh.position.z = -10
+    }
+
+    const initLoader = () => {
+      loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
+        const root = gltf.scene
+        let locscene = root.getObjectByName('Pen');
+        if (locscene?.children[0]) {
+          mesh.copy(locscene.children[0])
+          mesh2.copy(locscene.children[0])
+        }
+        mesh.rotateY(1.4);
+        mesh.rotateX(-0.5);
+        mesh.geometry.scale(1.8,1.8,1.8)
+        //mesh.rotation.y = 1.3;
+        //mesh.rotation.x = 0.5;
+        mesh.material.transparent = true;
+        
+        mesh2.rotateY(1.4);
+        mesh2.rotateX(-0.5);
+        mesh2.geometry.scale(1.8,1.8,1.8);
+        mesh2.position.y = mesh.position.y - 90
+        //mesh.rotation.y = 1.3;
+        //mesh.rotation.x = 0.5;
+        mesh2.material.transparent = true;
+        locscene?.clear();
+        root.clear();
+        //scene.add(root);
+      }, undefined, function ( error ) {
     
-    const primaryMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x921C1C,
-      metalness: 0.9,
-      roughness: 0.3,
-      emissive: 0xFFFFFF,
-      emissiveIntensity: 0,
-      wireframe: false,
-    });
-    const accentMaterial = new THREE.MeshStandardMaterial({
-      color: 0x39FF14,
-      emissive: 0x39FF14,
-      emissiveIntensity: 0.1,
-      metalness: 0.2,
-      roughness: 0.6,
-      wireframe: true,
-    });
-    const backMaterial = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      metalness: 0.2,
-      roughness: 0.6,
-      wireframe: false,
-      transparent: true,
-      opacity: 0,
-    });
-    const wallMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xBB9090,
-      metalness: 0.1,
-      wireframe: false,
-      roughness: 1.8,
-      displacementScale: 1.5,
-      ior: 1.73,
-      specularIntensity: 0.4,
-    });
-
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
-    const backwall = new THREE.BoxGeometry(currentMount.clientWidth/7, currentMount.clientHeight/7, 1,200,200);
-    const textgeo = new TextGeometry('three.js')
-
-    scene.background = new THREE.Color(0x000000);
-    camera.position.z = 35 + window.outerWidth / 100;
-
-    let mesh = new THREE.Mesh(geometry, primaryMaterial);
-    let meshtext = new THREE.Mesh(textgeo, primaryMaterial);
-    let mesh2 = new THREE.Mesh(geometry, primaryMaterial);
-    let mesh2text = new THREE.Mesh(textgeo, primaryMaterial);
-    let mesh3 = new THREE.Mesh(backwall, backMaterial);
-    let backmesh = new THREE.Mesh(backgeometry, backMaterial);
-
+        console.error( error );
     
-    backmesh.position.z = -14
+      } );
 
-    const loadManager = new THREE.LoadingManager();
-    const iloader = new THREE.TextureLoader(loadManager);
-    const floader = new FontLoader(loadManager);
-    
-    const loader = new GLTFLoader(loadManager);
+      floader.load('Bahianita_Regular.json', (font) => {
+          const text = 'BLOODY';  
+          const geometry = new TextGeometry(text, {
+            font: font,
+            size: 5,  
+        
+            depth: 0.5,  
+        
+            curveSegments: 12,  
+        
+            bevelEnabled: true,  
+            bevelThickness: 0.05,  
+        
+            bevelSize: 0.06,  
+        
+            bevelSegments: 3,  
+        
+          });
+          meshtext = new THREE.Mesh(geometry, primaryMaterial)
+          meshtext.position.x = -5.7
+          meshtext.position.z = 15;
 
-    let wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
-    let wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
-    let wtexturer = iloader.load('texts/brick_wall_001_rough_1k.jpg');
+          const text2 = 'BLOODY INK';  
+          const geometry2 = new TextGeometry(text2, {
+            font: font,
+            size: 5,  
+        
+            depth: 0.5,  
+        
+            curveSegments: 12,  
+        
+            bevelEnabled: true,  
+            bevelThickness: 0.05,  
+        
+            bevelSize: 0.06,  
+        
+            bevelSegments: 3,   
+        
+          });
+          mesh2text = new THREE.Mesh(geometry2, primaryMaterial)
+          mesh2text.position.x = -9
+          mesh2text.position.z = 15;
+      });
+    }
 
-    loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
-      const root = gltf.scene
-      let locscene = root.getObjectByName('Pen');
-      if (locscene?.children[0]) {
-        mesh.copy(locscene.children[0])
-        mesh2.copy(locscene.children[0])
-      }
-      mesh.rotateY(1.4);
-      mesh.rotateX(-0.5);
-      mesh.geometry.scale(1.8,1.8,1.8)
-      //mesh.rotation.y = 1.3;
-      //mesh.rotation.x = 0.5;
-      mesh.material.transparent = true;
-      
-      mesh2.rotateY(1.4);
-      mesh2.rotateX(-0.5);
-      mesh2.geometry.scale(1.8,1.8,1.8);
-      mesh2.position.y = mesh.position.y - 90
-      //mesh.rotation.y = 1.3;
-      //mesh.rotation.x = 0.5;
-      mesh2.material.transparent = true;
-      locscene?.clear()
-      //scene.add(root);
-    }, undefined, function ( error ) {
-  
-      console.error( error );
-  
-    } );
-
-    floader.load('Bahianita_Regular.json', (font) => {
-        const text = 'BLOODY';  
-        const geometry = new TextGeometry(text, {
-          font: font,
-          size: 5,  
-      
-          depth: 0.5,  
-      
-          curveSegments: 12,  
-      
-          bevelEnabled: true,  
-          bevelThickness: 0.05,  
-      
-          bevelSize: 0.06,  
-      
-          bevelSegments: 3,  
-      
-        });
-        meshtext = new THREE.Mesh(geometry, primaryMaterial)
-        meshtext.position.x = -5.7
-        meshtext.position.z = 15;
-
-        const text2 = 'BLOODY INK';  
-        const geometry2 = new TextGeometry(text2, {
-          font: font,
-          size: 5,  
-      
-          depth: 0.5,  
-      
-          curveSegments: 12,  
-      
-          bevelEnabled: true,  
-          bevelThickness: 0.05,  
-      
-          bevelSize: 0.06,  
-      
-          bevelSegments: 3,   
-      
-        });
-        mesh2text = new THREE.Mesh(geometry2, primaryMaterial)
-        mesh2text.position.x = -9
-        mesh2text.position.z = 15;
-    });
-
+    loadManager.onProgress = (url, loaded, total) => {
+      let prel = document.getElementById('pretext')
+      let prog = loaded + "/" + total;
+      prel.innerHTML = "LOADING - " + prog;
+    }
     loadManager.onLoad = () => {
       wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
       wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
@@ -228,35 +259,42 @@ export function NeonShift3D() {
       scene.add(mesh2);
       scene.add(mesh2text);
 
+      scene.add(ambientLight);
+      scene.add(directionalLight3);
+      scene.add(directionalLight2);
+      scene.add(directionalLight);
+      scene.add(directionalLight4);
+
       composer.addPass( renderPass );
       composer.addPass( bloomPass );
-      composer.addPass( glitchPass );
+      //composer.addPass( glitchPass );
       composer.addPass( outputPass );
       setgsap();
       setTimeout(fadepost, 500)
-
+      gsap.to('#preloader', {duration:1, opacity:0})
+      .eventCallback('onComplete', () => {document.getElementById('preloader')?.remove()})
+      
     };
 
-    
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+    
 
     const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight3.position.set(30, 0, 20);
-    scene.add(directionalLight3);
+    
 
     const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight2.position.set(0, 30, 0);
-    scene.add(directionalLight2);
+    
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
     directionalLight.position.set(0, -30, 0);
-    scene.add(directionalLight);
+    
 
     const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight4.position.set(2, -6, 20);
-    scene.add(directionalLight4);
+    
 
     const animate = () => {
       if (!isDraggingRef.current) {
@@ -286,17 +324,10 @@ export function NeonShift3D() {
     }
     
     const stopcamerazoom = () => {
-      geometry.dispose();
-      backgeometry.dispose();
-      backwall.dispose();
-      textgeo.dispose();
-      primaryMaterial.dispose();
-      accentMaterial.dispose();
-      backMaterial.dispose();
       scene.clear();
       renderer.dispose();
       composer.dispose();
-      currentMount.removeChild(rendererRef.current.domElement);
+      document.getElementById(rendererRef.current.domElement.id)?.remove()
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
     }
     
@@ -508,6 +539,12 @@ export function NeonShift3D() {
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('touchend', handleTouchUp);
     currentMount.addEventListener('click', handleClick);
+
+    initcomposer()
+    initmats()
+    initgeos()
+    initLoader()
+
     animate();
     
     // Cleanup
@@ -527,10 +564,6 @@ export function NeonShift3D() {
         currentMount.removeChild(rendererRef.current.domElement);
       }
       
-      geometry.dispose();
-      backgeometry.dispose();
-      backwall.dispose();
-      textgeo.dispose();
       primaryMaterial.dispose();
       accentMaterial.dispose();
       backMaterial.dispose();
