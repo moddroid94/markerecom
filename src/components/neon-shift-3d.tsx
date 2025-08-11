@@ -348,7 +348,7 @@ export function NeonShift3D() {
       window.location.assign("https://inkomnia.bigcartel.com/product/bloody");
       let fadereload = setTimeout(() => {
         let after = document.getElementById('reload')
-        after.className = "fixed flex top-0 bg-transparent backdrop-blur-sm w-full h-20 z-10 opacity-100"
+        after.className = "fixed flex top-0 bg-transparent backdrop-blur-sm w-full h-20 z-10"
       }, 500);
     }
     
