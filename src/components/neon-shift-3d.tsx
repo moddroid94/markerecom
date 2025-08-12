@@ -144,9 +144,9 @@ export function NeonShift3D() {
       const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
       const backwall = new THREE.BoxGeometry(currentMount.clientWidth/7, currentMount.clientHeight/7, 1,200,200);
       const textgeo = new TextGeometry('three.js')
-      mesh = new THREE.Mesh(geometry, primaryMaterial);
+      mesh = new THREE.Mesh();
       meshtext = new THREE.Mesh(textgeo, primaryMaterial);
-      mesh2 = new THREE.Mesh(geometry, primaryMaterial);
+      mesh2 = new THREE.Mesh();
       mesh2text = new THREE.Mesh(textgeo, primaryMaterial);
       mesh3 = new THREE.Mesh(backwall, backMaterial);
       backmesh = new THREE.Mesh(backgeometry, backMaterial);
@@ -155,30 +155,41 @@ export function NeonShift3D() {
     }
 
     const initLoader = () => {
-      loader.load( 'textexp/Untitled.gltf', function ( gltf ) {
+      loader.load( 'marker/markercustom.gltf', function ( gltf ) {
+        const calizStella_mat = new THREE.MeshPhysicalMaterial({
+            metalness: .5,
+            roughness: .4,
+            envMapIntensity: 0.9,
+            clearcoat: 0.6,
+            transparent: true,
+            //transmission: 0.3,
+            opacity: .7,
+            reflectivity: 0.2,
+            //refractionRatio: 0.985,
+            ior: 0.9,
+          })
         const root = gltf.scene
-        let locscene = root.getObjectByName('Pen');
-        if (locscene?.children[0]) {
-          mesh.copy(locscene.children[0])
-          mesh2.copy(locscene.children[0])
-        }
-        mesh.rotateY(1.4);
-        mesh.rotateX(-0.5);
-        mesh.geometry.scale(1.8,1.8,1.8)
-        //mesh.rotation.y = 1.3;
-        //mesh.rotation.x = 0.5;
-        mesh.material.transparent = true;
+        let locscene = root.getObjectByName('Marker');
+        let locscene2 = root.getObjectByName('Cap');
         
-        mesh2.rotateY(1.4);
-        mesh2.rotateX(-0.5);
-        mesh2.geometry.scale(1.8,1.8,1.8);
+        if (locscene?.children[0]) {
+          mesh.add(locscene.children[0])
+          mesh.add(locscene2.children[0])
+          mesh.children[1].material = calizStella_mat;
+          mesh.children[1].position.x = 0;
+          mesh2.copy(mesh)
+        }
+        mesh.rotateZ(0.7);
+        mesh.rotateX(0.7);
+        
+        mesh2.rotateZ(0.7);
+        mesh2.rotateX(0.7);
+
         mesh2.position.y = mesh.position.y - 90
-        //mesh.rotation.y = 1.3;
-        //mesh.rotation.x = 0.5;
-        mesh2.material.transparent = true;
+
         locscene?.clear();
+        locscene2?.clear();
         root.clear();
-        //scene.add(root);
       }, undefined, function ( error ) {
     
         console.error( error );
