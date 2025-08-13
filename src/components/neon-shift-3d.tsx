@@ -15,6 +15,7 @@ import { UltraHDRLoader } from '../components/ultraHDRLoader';
 import {TextureUtils} from '../components/TextureUtils';
 import { gsap } from 'gsap';
 
+
 export function NeonShift3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -142,7 +143,7 @@ export function NeonShift3D() {
     const initgeos = () => {
       const geometry = new THREE.BoxGeometry(1, 1, 1);
       const backgeometry = new THREE.BoxGeometry(currentMount.clientHeight/4, currentMount.clientWidth/4, 1);
-      const backwall = new THREE.BoxGeometry(currentMount.clientWidth/7, currentMount.clientHeight/7, 1,200,200);
+      const backwall = new THREE.BoxGeometry(currentMount.clientWidth/6, currentMount.clientHeight/6, 1,200,200);
       const textgeo = new TextGeometry('three.js')
       mesh = new THREE.Mesh();
       meshtext = new THREE.Mesh(textgeo, primaryMaterial);
@@ -157,13 +158,13 @@ export function NeonShift3D() {
     const initLoader = () => {
       loader.load( 'marker/markercustom.gltf', function ( gltf ) {
         const calizStella_mat = new THREE.MeshPhysicalMaterial({
-            metalness: .5,
-            roughness: .4,
+            metalness: .7,
+            roughness: .2,
             envMapIntensity: 0.9,
             clearcoat: 0.6,
             transparent: true,
             //transmission: 0.3,
-            opacity: .7,
+            opacity: .5,
             reflectivity: 0.2,
             //refractionRatio: 0.985,
             ior: 0.9,
@@ -175,15 +176,17 @@ export function NeonShift3D() {
         if (locscene?.children[0]) {
           mesh.add(locscene.children[0])
           mesh.add(locscene2.children[0])
+          mesh.children[0].children[1].material.roughness = 0.3,
+          mesh.children[0].children[1].material.clearcoat = 0,
           mesh.children[1].material = calizStella_mat;
           mesh.children[1].position.x = 0;
           mesh2.copy(mesh)
         }
         mesh.rotateZ(0.7);
-        mesh.rotateX(0.7);
+        mesh.rotateX(1.4);
         
         mesh2.rotateZ(0.7);
-        mesh2.rotateX(0.7);
+        mesh2.rotateX(1.4);
 
         mesh2.position.y = mesh.position.y - 90
 
@@ -256,6 +259,7 @@ export function NeonShift3D() {
       mesh3.material.normalMap = wtexturen,
       mesh3.material.displacementMap = wtexturen,
       mesh3.material.map = wtextured,
+      
       
       mesh3.position.z = -15
       mesh3.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.10))

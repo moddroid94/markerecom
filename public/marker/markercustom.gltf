@@ -4,6 +4,7 @@
 		"version":"2.0"
 	},
 	"extensionsUsed":[
+		"KHR_materials_clearcoat",
 		"KHR_materials_specular",
 		"KHR_materials_anisotropy",
 		"KHR_materials_ior"
@@ -92,6 +93,10 @@
 		{
 			"doubleSided":true,
 			"extensions":{
+				"KHR_materials_clearcoat":{
+					"clearcoatFactor":1,
+					"clearcoatRoughnessFactor":0.022727273404598236
+				},
 				"KHR_materials_specular":{
 					"specularColorFactor":[
 						1.7142856121063232,
@@ -103,7 +108,7 @@
 					"anisotropyStrength":0.0952381044626236
 				},
 				"KHR_materials_ior":{
-					"ior":1.2400000095367432
+					"ior":1.440000057220459
 				}
 			},
 			"name":"Material",
@@ -111,8 +116,8 @@
 				"baseColorTexture":{
 					"index":0
 				},
-				"metallicFactor":0.11818182468414307,
-				"roughnessFactor":0.8073593974113464
+				"metallicFactor":0,
+				"roughnessFactor":0.5937229990959167
 			}
 		},
 		{
@@ -187,8 +192,8 @@
 	"images":[
 		{
 			"mimeType":"image/png",
-			"name":"Untitled",
-			"uri":"textures/Untitled.png"
+			"name":"bloodylabel80",
+			"uri":"textures/bloodylabel80.png"
 		}
 	],
 	"accessors":[
@@ -263,7 +268,7 @@
 		{
 			"bufferView":8,
 			"componentType":5126,
-			"count":3562,
+			"count":3632,
 			"max":[
 				11.360511779785156,
 				1.9079811573028564,
@@ -279,13 +284,13 @@
 		{
 			"bufferView":9,
 			"componentType":5126,
-			"count":3562,
+			"count":3632,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":10,
 			"componentType":5126,
-			"count":3562,
+			"count":3632,
 			"type":"VEC2"
 		},
 		{
@@ -380,50 +385,50 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":42744,
+			"byteLength":43584,
 			"byteOffset":92228,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":42744,
-			"byteOffset":134972,
+			"byteLength":43584,
+			"byteOffset":135812,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":28496,
-			"byteOffset":177716,
+			"byteLength":29056,
+			"byteOffset":179396,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":21396,
-			"byteOffset":206212,
+			"byteOffset":208452,
 			"target":34963
 		},
 		{
 			"buffer":0,
 			"byteLength":3480,
-			"byteOffset":227608,
+			"byteOffset":229848,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":3480,
-			"byteOffset":231088,
+			"byteOffset":233328,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2320,
-			"byteOffset":234568,
+			"byteOffset":236808,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2688,
-			"byteOffset":236888,
+			"byteOffset":239128,
 			"target":34963
 		}
 	],
@@ -437,7 +442,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":239576,
+			"byteLength":241816,
 			"uri":"markercustom.bin"
 		}
 	]
