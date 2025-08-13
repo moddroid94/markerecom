@@ -42,6 +42,7 @@ export function NeonShift3D() {
     let gss2: GSAPAnimation;
     let gss3: GSAPAnimation;
     let gss4: GSAPAnimation;
+    let gss5: GSAPAnimation;
     let gsap1 = gsap.to({x:0,y:0}, {duration: 1, y:0}).pause();
     let gsap2: GSAPAnimation;
 
@@ -250,9 +251,9 @@ export function NeonShift3D() {
       prel.innerHTML = "LOADING - " + prog;
     }
     loadManager.onLoad = () => {
-      wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
-      wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
-      wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1.2 : 0.6 )
+      wtextured = TextureUtils.cover(wtextured,window.devicePixelRatio < 1.5 ? 1.3 : 0.6 )
+      wtexturen = TextureUtils.cover(wtexturen,window.devicePixelRatio < 1.5 ? 1.3 : 0.6 )
+      wtexturer = TextureUtils.cover(wtexturer,window.devicePixelRatio < 1.5 ? 1.3 : 0.6 )
 
       mesh3.material = wallMaterial;
       mesh3.material.roughnessMap = wtextured,
@@ -262,7 +263,7 @@ export function NeonShift3D() {
       
       
       mesh3.position.z = -15
-      mesh3.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.10))
+      //mesh3.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.10))
       
       meshtext.position.y = mesh.position.y - 10;
       mesh2text.position.y = mesh2.position.y - 10;
@@ -396,14 +397,14 @@ export function NeonShift3D() {
         gsap.to(mesh3.rotation, {duration:2, z:90})
       }
       else if (mesh.position.y > 0 && mesh2.position.y < -25) {
-        gsap.to(mesh3.rotation, {duration:2, x:-0.05, y:-0.10})
+        gsap.to(mesh3.position, {duration:2, y:0.45})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:0})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:(window.outerHeight / 15)})
         gsap.to(mesh2text.position, {duration: 2, y:-10})
         gsap.to(meshtext.position, {duration: 2, y:(window.outerHeight / 15)})
       } 
       else if (mesh.position.y > 0 && mesh2.position.y < 0) {
-        gsap.to(mesh3.rotation, {duration:2, x:0.05, y:0.10})
+        gsap.to(mesh3.position, {duration:2, y:-0.45})
         gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
         gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
         gsap.to(meshtext.position, {duration: 2, y:-10})
@@ -429,12 +430,37 @@ export function NeonShift3D() {
       camera.updateProjectionMatrix();
       renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     };
+    let holdingrotate;
+    let isholding;
 
+    const touchrotate = () => {
+      if (isholding == true && dragx < 10 && dragd < 10) {
+        holdingrotate = true;
+        if (!gss1.isActive() && !gsap1.isActive()) {
+          setgsap();
+        }
+        if (!gsap1.isActive()) {
+          gss1.play()
+          gss2.play()
+          gss3.play()
+          gss4.play()
+          gss5.play()
+        }
+      } else {
+        holdingrotate = false
+      }
+    }
+
+    
+    let recall;
     const handletouch = (event: TouchEvent) => {
       dragd = 0;
       dragx = 0;
       diff = event.touches[0].screenY;
       diffx = event.touches[0].screenX;
+      isholding = true;
+      recall = setTimeout(touchrotate, 500)
+
       
     }
 
@@ -458,7 +484,6 @@ export function NeonShift3D() {
       }
 
       //handleTranslate(deltay, 0.07)
-
       mesh.rotateOnWorldAxis(myAxis, ( rotation ))
       mesh2.rotateOnWorldAxis(myAxis, ( rotation ))
 
@@ -466,17 +491,26 @@ export function NeonShift3D() {
 
     const handleScroll = (event: WheelEvent) => {
         if (event.deltaY > 0) {
-          mesh.position.y += 1.1;
+          gsap.to(mesh3.position, {duration:2, y:0.45})
+          gsap2 = gsap.to(mesh2.position, {duration: 2, y:0})
+          gsap1 = gsap.to(mesh.position, {duration: 2, y:(window.outerHeight / 15)})
+          gsap.to(mesh2text.position, {duration: 2, y:-10})
+          gsap.to(meshtext.position, {duration: 2, y:(window.outerHeight / 15)})
         } else if (event.deltaY < 0) {
-          mesh2.position.y -= 1.1
+          gsap.to(mesh3.position, {duration:2, y:-0.45})
+          gsap1 = gsap.to(mesh.position, {duration: 2, y:0})
+          gsap2 = gsap.to(mesh2.position, {duration: 2, y:-(window.outerHeight / 15)})
+          gsap.to(meshtext.position, {duration: 2, y:-10})
+          gsap.to(mesh2text.position, {duration: 2, y:-(window.outerHeight / 15)})
         }
-        snapScroll()
+        //snapScroll()
     };
     const setgsap = () => {
       gss1 = gsap.to(mesh.position, {duration: 1, z:mesh.position.z +7}).pause()
       gss2 = gsap.to(meshtext.position, {duration: 1, y:meshtext.position.y -5}).pause()
       gss3 = gsap.to(mesh2.position, {duration: 1, z:mesh2.position.z +7}).pause()
       gss4 = gsap.to(mesh2text.position, {duration: 1, y:mesh2text.position.y -5}).pause()
+      gss5 = gsap.to(mesh.children[1].position, {duration: 1, x:3}).pause()
     }
     
     const handleMouseDown = (event: MouseEvent) => {
@@ -494,6 +528,7 @@ export function NeonShift3D() {
         gss2.play()
         gss3.play()
         gss4.play()
+        gss5.play()
       }
       console.log('mousedown')
     };
@@ -529,6 +564,7 @@ export function NeonShift3D() {
       gss2.reverse()
       gss3.reverse()
       gss4.reverse()
+      gss5.reverse()
       //snapBack()
     };
 
@@ -540,8 +576,14 @@ export function NeonShift3D() {
         mesh.position.y += 1.1;
       } else if (dragd < -55) {
         mesh2.position.y -= 1.1
-      } 
-      
+      }
+      gss1.reverse()
+      gss2.reverse()
+      gss3.reverse()
+      gss4.reverse()
+      gss5.reverse()
+      isholding = false;
+      holdingrotate = false
       snapBack()
       
     };
