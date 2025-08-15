@@ -47,6 +47,10 @@ export function NeonShift3D() {
     let gsap2: GSAPAnimation;
 
     let frameId: number;
+    let isRevealing = false;
+    const clock = new THREE.Clock();
+    
+    let revealStartTime = 0;
 
     let primaryMaterial: THREE.MeshPhysicalMaterial;
     let accentMaterial: THREE.MeshStandardMaterial;
@@ -126,7 +130,110 @@ export function NeonShift3D() {
         displacementScale: 1.5,
         ior: 1.73,
         specularIntensity: 0.4,
+        transparent: true,
       });
+      wallMaterial.onBeforeCompile = (shader) => {
+        // Pass uniform values to the shader program for JS to control.
+        shader.uniforms.u_progress = { value: 0.0 };
+        shader.uniforms.u_aspect = { value: currentMount.clientWidth / currentMount.clientHeight };
+  
+        // === Vertex Shader Modification ===
+        // 1. Declare our custom varying variable.
+        // 2. Assign the built-in 'uv' attribute to it.
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <common>',
+          `
+          #include <common>
+          uniform float u_progress;
+          uniform float u_aspect;
+          varying vec2 vRevealUv;
+          `
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <uv_vertex>',
+          `
+          #include <uv_vertex>
+          vRevealUv = uv;
+  
+          `
+        );
+  
+        // === Fragment Shader Modification ===
+        // 1. Declare the uniforms and the matching 'in' varying.
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          `
+          #include <common>
+          uniform float u_progress;
+          uniform float u_aspect;
+          varying vec2 vRevealUv;
+          `
+        );
+  
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <normal_fragment_maps>',
+            `
+            #include <normal_fragment_maps>
+            
+            vec2 centerx = vec2(0.5, 0.5);
+            vec2 px = vRevealUv - centerx;
+            px.x *= u_aspect; // Correct for aspect ratio to keep the reveal circular
+  
+            float distx = length(px) * fract(sin(dot(px.xy ,vec2(12.9898,78.233)) * 314.5453));
+            float radiusx = u_progress;
+  
+            float reveal_alphax = 1.0 - smoothstep(radiusx - 0.45, radiusx, distx);
+            
+            // Blend normals using partial derivative blending
+  
+            normal.xyz = normal.xyz *= reveal_alphax;
+            `
+        );
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <displacement_fragment_maps>',
+          `
+          #include <displacement_fragment_maps>
+          
+          vec2 centerx = vec2(0.5, 0.5);
+          vec2 px = vRevealUv - centerx;
+          px.x *= u_aspect; // Correct for aspect ratio to keep the reveal circular
+
+          float distx = length(px) * fract(sin(dot(py.xy ,vec2(12.9898,78.233));
+          float radiusx = u_progress;
+
+          float reveal_alphax = 1.0 - smoothstep(radiusx -(0.4), radiusx, distx);
+          
+          // Blend normals using partial derivative blending
+
+          displacement.xyz = displacement.xyz *= reveal_alphax;
+          `
+      );
+  
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <color_fragment>',
+          `
+          #include <color_fragment>
+
+          
+          vec2 centery = vec2(0.5, 0.5);
+          vec2 py = vRevealUv - centery; // Use our own varying now
+          py.x *= u_aspect; // Correct for aspect ratio to keep the reveal circular
+          
+          float disty = length(py) ;
+          float radiusy = u_progress ;
+          float feathery = 0.5;
+          // Calculate alpha based on distance from center
+          float reveal_alphay = 1.0 - smoothstep(radiusy - feathery, radiusy, disty);  
+  
+          diffuseColor = mix(vec4(1,1,1,0),diffuseColor, reveal_alphay);
+          `
+        );
+  
+        // Store the modified shader on the material so we can access uniforms later
+        wallMaterial.userData.shader = shader;
+        //console.log(shader)
+      };
 
       wtextured = iloader.load('texts/brick_wall_001_diffuse_1k.jpg');
       wtexturen = iloader.load('texts/brick_wall_001_nor_gl_1k.jpg');
@@ -188,7 +295,7 @@ export function NeonShift3D() {
         
         mesh2.rotateZ(0.7);
         mesh2.rotateX(1.4);
-
+        mesh.position.y = -60;
         mesh2.position.y = mesh.position.y - 90
 
         locscene?.clear();
@@ -286,7 +393,9 @@ export function NeonShift3D() {
       //composer.addPass( glitchPass );
       composer.addPass( outputPass );
       setgsap();
-      setTimeout(fadepost, 500)
+      setTimeout(fadepost, 200)
+      gsap.to(mesh.position, {duration:1.5, delay:1, y:0})
+      gsap.to(meshtext.position, {duration: 1.7, delay:1, y:-10})
       gsap.to('#preloader', {duration:1, opacity:0})
       .eventCallback('onComplete', () => {document.getElementById('preloader')?.remove()})
       
@@ -311,14 +420,30 @@ export function NeonShift3D() {
     const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight4.position.set(2, -6, 20);
     
+    
+    const revealDuration = 5.0; // seconds
 
     const animate = () => {
       if (!isDraggingRef.current) {
         mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
         mesh2.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ( 0.002))
       }
-      
-
+      const elapsedTime = clock.getElapsedTime();
+      if (isRevealing) {
+        const timeSinceStart = elapsedTime - revealStartTime;
+        let progress = timeSinceStart / revealDuration;
+        
+        if (progress >= 1.0) {
+          progress = 1.0;
+          isRevealing = false;
+        }
+        
+        // Update the u_progress uniform on the modified shader
+        if (wallMaterial.userData.shader) {
+          // Ease-out function for a smoother stop
+          wallMaterial.userData.shader.uniforms.u_progress.value = 1.0 - Math.pow(1.0 - progress, 4);
+        }
+      }
       composer.render();
 
       frameId = requestAnimationFrame(animate);
@@ -326,6 +451,8 @@ export function NeonShift3D() {
 
     const fadepost = () => {
       glitchPass.enabled = false;
+      isRevealing = true;
+      revealStartTime = clock.getElapsedTime()
     }
 
     const camerazoom = () => {
