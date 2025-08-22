@@ -5,7 +5,6 @@
 	},
 	"extensionsUsed":[
 		"KHR_materials_clearcoat",
-		"KHR_materials_transmission",
 		"KHR_materials_specular",
 		"KHR_materials_anisotropy",
 		"KHR_materials_ior"
@@ -166,14 +165,8 @@
 			"doubleSided":true,
 			"extensions":{
 				"KHR_materials_clearcoat":{
-					"clearcoatFactor":1,
+					"clearcoatFactor":0.9318181872367859,
 					"clearcoatRoughnessFactor":0.1599999964237213
-				},
-				"KHR_materials_transmission":{
-					"transmissionFactor":0.040909089148044586
-				},
-				"KHR_materials_ior":{
-					"ior":1.5800000429153442
 				}
 			},
 			"name":"Material.003",
