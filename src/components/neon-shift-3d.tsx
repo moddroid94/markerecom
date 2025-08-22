@@ -264,7 +264,7 @@ export function NeonShift3D() {
     }
 
     const initLoader = () => {
-      loader.load( 'marker/markercustom.gltf', function ( gltf ) {
+      loader.load( 'mrk2/marker-vial-scene_gltf.gltf', function ( gltf ) {
         const calizStella_mat = new THREE.MeshPhysicalMaterial({
             metalness: .7,
             roughness: .2,
@@ -280,21 +280,23 @@ export function NeonShift3D() {
         const root = gltf.scene
         let locscene = root.getObjectByName('Marker');
         let locscene2 = root.getObjectByName('Cap');
-        
+        let locscene3 = root.getObjectByName('Vial');
+
         if (locscene?.children[0]) {
           mesh.add(locscene.children[0])
-          mesh.add(locscene2.children[0])
+          mesh.add(locscene2!.children[0])
+          mesh2.add(locscene3!.children[0])
           mesh.children[0].children[1].material.roughness = 0.3,
           mesh.children[0].children[1].material.clearcoat = 0,
           mesh.children[1].material = calizStella_mat;
           mesh.children[1].position.x = 0;
-          mesh2.copy(mesh)
+          
         }
         mesh.rotateZ(0.7);
         mesh.rotateX(1.4);
         
-        mesh2.rotateZ(0.7);
-        mesh2.rotateX(1.4);
+        //mesh2.rotateZ(0.7);
+        mesh2.rotateX(-0.2);
         mesh.position.y = -60;
         mesh2.position.y = mesh.position.y - 90
 
